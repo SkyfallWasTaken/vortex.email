@@ -1,0 +1,11 @@
+# To-Dos
+
+## ESMTP Extensions
+
+- [x] SIZE
+- [ ] 8BITMIME
+- [ ] STARTTLS
+- [ ] ENHANCEDSTATUSCODES
+- [ ] PIPELINING
+- [ ] CHUNKING
+- [x] SMTPUTF8

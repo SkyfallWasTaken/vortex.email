@@ -1,10 +1,12 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
+mod consts;
+mod esmtp;
 mod messages;
 use messages::Command;
 
-const ADDR: &str = "127.0.0.1:587";
+const ADDR: &str = "127.0.0.1:25";
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +26,7 @@ async fn main() {
 }
 
 async fn process(mut socket: TcpStream) {
-    let mut buf = vec![0; 1024];
+    let mut buf = vec![0; consts::MAX_SIZE + consts::ALLOWANCE];
 
     socket.write_all(messages::GREETING).await.unwrap();
 
@@ -38,11 +40,20 @@ async fn process(mut socket: TcpStream) {
             }
         };
 
-        let message = &buf[0..n];
-        let command = Command::from_smtp_message(&String::from_utf8_lossy(message)).unwrap();
+        let msg = String::from_utf8_lossy(&buf[0..n]);
+        let command = Command::from_smtp_message(&msg).unwrap();
         match command {
             Command::Helo { fqdn } => {
-                socket.write_all(messages::HELO_RESPONSE.replace("[$hostname]", fqdn)).await.unwrap();
+                socket.write_all(messages::HELO_RESPONSE).await.unwrap();
+            }
+            Command::Ehlo { fqdn } => {
+                socket.write_all(messages::HELO_RESPONSE).await.unwrap();
+                for ext in esmtp::SUPPORTED_EXTENSIONS {
+                    socket
+                        .write_all(format!("250-{}\n", ext).as_bytes())
+                        .await
+                        .unwrap();
+                }
             }
         }
     }
