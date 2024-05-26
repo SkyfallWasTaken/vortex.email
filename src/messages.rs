@@ -10,7 +10,7 @@ pub enum Command<'a> {
 impl<'a> Command<'a> {
     pub fn from_smtp_message(message: &'a str) -> Option<Command<'a>> {
         let message = message.split_whitespace().collect::<Vec<&str>>();
-        let cmd = message.get(0)?.to_uppercase();
+        let cmd = message.first()?.to_uppercase();
         let cmd = cmd.as_str();
 
         match cmd {
