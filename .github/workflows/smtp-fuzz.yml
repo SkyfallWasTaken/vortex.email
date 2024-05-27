@@ -32,8 +32,3 @@ jobs:
 
           wait $FUZZ_PID
           echo "smtp-fuzz.pl has finished"
-
-          # Stop the server after smtp-fuzz.pl is done
-          sudo kill $SERVER_PID
-          wait $SERVER_PID
-          echo "Server has finished"
