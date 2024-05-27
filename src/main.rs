@@ -8,25 +8,23 @@ use messages::Command;
 
 const ADDR: &str = "127.0.0.1:25";
 
-#[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt::init();
-    let listener = TcpListener::bind(ADDR).await.unwrap();
+struct ConnState {
+    esmtp: bool,
+    greeting_done: bool,
 
-    tracing::info!("Listening on {ADDR}");
-
-    loop {
-        let (socket, _) = listener.accept().await.unwrap();
-        // A new task is spawned for each inbound socket. The socket is
-        // moved to the new task and processed there.
-        tokio::spawn(async move {
-            process(socket).await;
-        });
-    }
+    mail_from: Option<String>,
+    rcpt_to: Vec<String>,
 }
 
 async fn process(mut socket: TcpStream) {
-    let mut buf = vec![0; consts::MAX_SIZE + consts::ALLOWANCE];
+    let mut buf = vec![0; consts::MAX_SIZE];
+
+    let mut state = ConnState {
+        esmtp: false,
+        greeting_done: false,
+        mail_from: None,
+        rcpt_to: Vec::new(),
+    };
 
     socket.write_all(messages::GREETING).await.unwrap();
 
@@ -44,10 +42,15 @@ async fn process(mut socket: TcpStream) {
         let command = Command::from_smtp_message(&msg).unwrap();
         match command {
             Command::Helo { fqdn } => {
+                state.greeting_done = true;
+                state.esmtp = false;
                 socket.write_all(messages::HELO_RESPONSE).await.unwrap();
             }
             Command::Ehlo { fqdn } => {
+                state.greeting_done = true;
+                state.esmtp = true;
                 socket.write_all(messages::HELO_RESPONSE).await.unwrap();
+
                 for ext in esmtp::SUPPORTED_EXTENSIONS {
                     socket
                         .write_all(format!("250-{}\n", ext).as_bytes())
@@ -55,6 +58,50 @@ async fn process(mut socket: TcpStream) {
                         .unwrap();
                 }
             }
+            Command::MailFrom { email } => {
+                if !state.greeting_done {
+                    socket
+                        .write_all(messages::BAD_COMMAND_SEQUENCE)
+                        .await
+                        .unwrap();
+                    continue;
+                }
+
+                state.mail_from = Some(email.to_string());
+                socket.write_all(messages::OK).await.unwrap();
+            }
+            Command::RcptTo { email } => {
+                if !state.greeting_done || state.mail_from.is_none() {
+                    socket
+                        .write_all(messages::BAD_COMMAND_SEQUENCE)
+                        .await
+                        .unwrap();
+                    continue;
+                }
+
+                state.rcpt_to.push(email.to_string());
+                socket.write_all(messages::OK).await.unwrap();
+            }
+            Command::Help => {
+                socket.write_all(messages::HELP_RESPONSE).await.unwrap();
+            }
         }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+    let listener = TcpListener::bind(ADDR).await.unwrap();
+
+    tracing::info!("Listening on {ADDR}");
+
+    loop {
+        let (socket, _) = listener.accept().await.unwrap();
+        // A new task is spawned for each inbound socket. The socket is
+        // moved to the new task and processed there.
+        tokio::spawn(async move {
+            process(socket).await;
+        });
     }
 }
