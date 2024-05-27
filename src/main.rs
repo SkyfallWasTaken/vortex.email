@@ -10,6 +10,7 @@ use messages::Command;
 
 const ADDR: &str = "127.0.0.1:25";
 
+#[derive(Debug)]
 struct ConnState {
     esmtp: bool,
     greeting_done: bool,
@@ -49,13 +50,17 @@ async fn process(mut socket: TcpStream) {
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
-            if msg.ends_with("\r\n.\r\n") {
+            tracing::info!("Data: {:?}", msg);
+            // TODO: is this correct?
+            if msg.ends_with(".\n") {
                 state.waiting_for_data = false;
                 state
                     .data
                     .get_or_insert_with(Vec::new)
-                    .extend_from_slice(&buf[0..n - 5]); // Don't include the trailing \r\n.\r\n
+                    .extend_from_slice(&buf[0..n - 2]); // Don't include the trailing .\n
                 socket.write_all(messages::OK).await.unwrap();
+
+                dbg!(&state);
             } else {
                 state
                     .data
@@ -124,6 +129,7 @@ async fn process(mut socket: TcpStream) {
                     }
 
                     state.waiting_for_data = true;
+                    tracing::info!("Waiting for data");
                     socket.write_all(messages::DATA_RESPONSE).await.unwrap();
                 }
 
@@ -138,6 +144,11 @@ async fn process(mut socket: TcpStream) {
                     state.rcpt_to.clear();
                     state.data = None;
                     socket.write_all(messages::OK).await.unwrap();
+                }
+                Command::Quit => {
+                    socket.write_all(messages::BYE).await.unwrap();
+                    socket.shutdown().await.unwrap();
+                    return;
                 }
             }
         }
