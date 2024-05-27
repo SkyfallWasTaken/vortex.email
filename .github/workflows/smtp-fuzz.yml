@@ -23,17 +23,21 @@ jobs:
       - name: Run server
         run: |
           sudo target/debug/vortex-smtp-server &
-          echo "Server running in background"
+          SERVER_PID=$!
+          echo "Server running in background with PID $SERVER_PID"
 
       - name: Run smtp-fuzz.pl in parallel
         run: |
           perl Copyleft/smtp-fuzz.pl 127.0.0.1 25 &
-          echo "smtp-fuzz.pl running in background"
+          FUZZ_PID=$!
+          echo "smtp-fuzz.pl running in background with PID $FUZZ_PID"
 
       - name: Wait for smtp-fuzz.pl to finish
         run: |
-          wait %1
+          wait $FUZZ_PID
+          echo "smtp-fuzz.pl has finished"
 
-      - name: Wait for cargo run to finish
+      - name: Wait for cargo server to finish
         run: |
-          wait %2
+          wait $SERVER_PID
+          echo "Server has finished"
