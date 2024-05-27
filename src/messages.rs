@@ -43,7 +43,9 @@ impl<'a> Command<'a> {
                 let arg = msg.get(1)?.to_uppercase();
 
                 if arg.starts_with("FROM:") {
+                    let arg = msg.get(1)?;
                     let email = arg[6..arg.len() - 1].to_string();
+
                     if !email.is_empty() {
                         return Some(Self::MailFrom { email });
                     }
@@ -56,7 +58,9 @@ impl<'a> Command<'a> {
                 let arg = msg.get(1)?.to_uppercase();
 
                 if arg.starts_with("TO:") {
+                    let arg = msg.get(1)?;
                     let email = arg[4..arg.len() - 1].to_string();
+
                     if !email.is_empty() {
                         return Some(Self::RcptTo { email });
                     }
@@ -65,6 +69,7 @@ impl<'a> Command<'a> {
                     None
                 }
             }
+
             "DATA" => Some(Self::Data),
 
             "HELP" => Some(Self::Help),
