@@ -18,6 +18,8 @@ pub enum Command<'a> {
     MailFrom { email: &'a str },
     RcptTo { email: &'a str },
     Help,
+    NoOp,
+    Rset,
 }
 
 impl<'a> Command<'a> {
@@ -43,6 +45,7 @@ impl<'a> Command<'a> {
                 Some(Self::RcptTo { email: msg.get(2)? })
             }
             "HELP" => Some(Self::Help),
+            "NOOP" => Some(Self::NoOp),
             _ => None,
         }
     }

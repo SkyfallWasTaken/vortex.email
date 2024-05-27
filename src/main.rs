@@ -14,6 +14,7 @@ struct ConnState {
 
     mail_from: Option<String>,
     rcpt_to: Vec<String>,
+    data: Option<[u8; consts::MAX_SIZE]>,
 }
 
 async fn process(mut socket: TcpStream) {
@@ -22,8 +23,10 @@ async fn process(mut socket: TcpStream) {
     let mut state = ConnState {
         esmtp: false,
         greeting_done: false,
+
         mail_from: None,
         rcpt_to: Vec::new(),
+        data: None,
     };
 
     socket.write_all(messages::GREETING).await.unwrap();
@@ -84,6 +87,15 @@ async fn process(mut socket: TcpStream) {
             }
             Command::Help => {
                 socket.write_all(messages::HELP_RESPONSE).await.unwrap();
+            }
+            Command::NoOp => {
+                socket.write_all(messages::OK).await.unwrap();
+            }
+            Command::Rset => {
+                state.mail_from = None;
+                state.rcpt_to.clear();
+                state.data = None;
+                socket.write_all(messages::OK).await.unwrap();
             }
         }
     }
