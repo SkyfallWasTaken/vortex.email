@@ -59,8 +59,6 @@ async fn process(mut socket: TcpStream) {
                     .get_or_insert_with(Vec::new)
                     .extend_from_slice(&buf[0..n - 2]); // Don't include the trailing .\n
                 socket.write_all(messages::OK).await.unwrap();
-
-                dbg!(&state);
             } else {
                 state
                     .data
