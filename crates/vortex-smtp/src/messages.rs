@@ -1,7 +1,7 @@
 use const_format::formatcp;
 
 pub const GREETING: &[u8] = formatcp!(
-    "220 smtp.example.org ESMTP WillowEmail(v{})\n",
+    "220 smtp.example.org ESMTP VortexSMTP(v{})\n",
     env!("CARGO_PKG_VERSION")
 )
 .as_bytes();
@@ -49,10 +49,8 @@ impl<'a> Command<'a> {
                     if !email.is_empty() {
                         return Some(Self::MailFrom { email });
                     }
-                    None
-                } else {
-                    None
                 }
+                None
             }
             "RCPT" => {
                 let arg = msg.get(1)?.to_uppercase();

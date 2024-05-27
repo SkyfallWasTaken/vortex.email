@@ -1,0 +1,11 @@
+[package]
+name = "vortex-smtp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eyre = "0.6.12"
+const_format = "0.2.32"
+tokio = { version = "1.37.0", features = ["net", "io-util"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"

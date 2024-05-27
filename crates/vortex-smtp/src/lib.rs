@@ -1,7 +1,7 @@
-use color_eyre::Result;
+use eyre::Result;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 
 mod consts;
 mod esmtp;
@@ -155,13 +155,10 @@ async fn process(mut socket: TcpStream) {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
-    tracing_subscriber::fmt::init();
-    let listener = TcpListener::bind(ADDR).await.unwrap();
+pub async fn listen<A: ToSocketAddrs>(addr: A) -> Result<()> {
+    let listener = TcpListener::bind(addr).await.unwrap();
 
-    tracing::info!("Listening on {ADDR}");
+    tracing::debug!("Listening on {ADDR}");
 
     loop {
         let (socket, _) = listener.accept().await.unwrap();
