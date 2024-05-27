@@ -20,22 +20,20 @@ jobs:
       - name: Run cargo build
         run: cargo build
 
-      - name: Run server
+      - name: Run server and smtp-fuzz.pl in parallel
         run: |
           sudo target/debug/vortex-smtp-server &
           SERVER_PID=$!
           echo "Server running in background with PID $SERVER_PID"
-          sleep 120
-        # TODO: remove this hack
-      - name: Run smtp-fuzz.pl in parallel
-        run: |
+
           perl Copyleft/smtp-fuzz.pl 127.0.0.1 25 &
           FUZZ_PID=$!
           echo "smtp-fuzz.pl running in background with PID $FUZZ_PID"
 
-      - name: Wait for smtp-fuzz.pl to finish
-        run: |
           wait $FUZZ_PID
           echo "smtp-fuzz.pl has finished"
+
+          # Stop the server after smtp-fuzz.pl is done
+          sudo kill $SERVER_PID
           wait $SERVER_PID
           echo "Server has finished"
