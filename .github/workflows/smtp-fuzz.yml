@@ -27,7 +27,7 @@ jobs:
 
       - name: Run smtp-fuzz.pl in parallel
         run: |
-          perl GPL/smtp-fuzz.pl 127.0.0.1 25 &
+          perl Copyleft/smtp-fuzz.pl 127.0.0.1 25 &
           echo "smtp-fuzz.pl running in background"
 
       - name: Wait for smtp-fuzz.pl to finish
