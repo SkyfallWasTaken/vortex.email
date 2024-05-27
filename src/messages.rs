@@ -64,10 +64,8 @@ impl<'a> Command<'a> {
                     if !email.is_empty() {
                         return Some(Self::RcptTo { email });
                     }
-                    None
-                } else {
-                    None
                 }
+                None
             }
 
             "DATA" => Some(Self::Data),

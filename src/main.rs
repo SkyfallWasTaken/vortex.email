@@ -88,7 +88,7 @@ async fn process(mut socket: TcpStream) {
 
                     for ext in esmtp::SUPPORTED_EXTENSIONS {
                         socket
-                            .write_all(format!("250-{}\n", ext).as_bytes())
+                            .write_all(format!("250-{ext}\n").as_bytes())
                             .await
                             .unwrap();
                     }
