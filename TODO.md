@@ -10,6 +10,12 @@
 - [ ] CHUNKING
 - [x] SMTPUTF8
 
+## Fuzzing Failures
+
+- `begin <= end (6 <= 5) when slicing FROM:<` - crates/vortex-smtp/src/messages.rs:47
+- `begin <= end (4 <= 3) when slicing TO:<` - crates/vortex-smtp/src/messages.rs:60
+
+
 ## Miscellaneous
 
 ### DATA
