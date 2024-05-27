@@ -31,7 +31,7 @@ pub enum Command<'a> {
 
 impl<'a> Command<'a> {
     pub fn from_smtp_message(msg: &'a str) -> Option<Command<'a>> {
-        let msg: Vec<&str> = msg.trim().split_whitespace().collect();
+        let msg: Vec<&str> = msg.split_whitespace().collect();
         let cmd = msg.first()?.to_uppercase();
         let cmd = cmd.as_str();
 
