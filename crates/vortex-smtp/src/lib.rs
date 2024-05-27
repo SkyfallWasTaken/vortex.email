@@ -50,7 +50,7 @@ async fn process(mut socket: TcpStream) {
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
-            tracing::info!("Data: {:?}", msg);
+            tracing::debug!("Data: {:?}", msg);
             // TODO: is this correct?
             if msg.ends_with(".\n") {
                 state.waiting_for_data = false;
@@ -127,7 +127,7 @@ async fn process(mut socket: TcpStream) {
                     }
 
                     state.waiting_for_data = true;
-                    tracing::info!("Waiting for data");
+                    tracing::debug!("Waiting for data");
                     socket.write_all(messages::DATA_RESPONSE).await.unwrap();
                 }
 

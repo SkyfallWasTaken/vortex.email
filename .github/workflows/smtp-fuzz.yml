@@ -1,0 +1,39 @@
+name: Run smtp-fuzz and cargo run
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y perl
+
+      - name: Run cargo build
+        run: cargo build
+
+      - name: Run server
+        run: |
+          sudo target/debug/vortex-smtp-server &
+          echo "Server running in background"
+
+      - name: Run smtp-fuzz.pl in parallel
+        run: |
+          perl GPL/smtp-fuzz.pl 127.0.0.1 25 &
+          echo "smtp-fuzz.pl running in background"
+
+      - name: Wait for smtp-fuzz.pl to finish
+        run: |
+          wait %1
+
+      - name: Wait for cargo run to finish
+        run: |
+          wait %2
