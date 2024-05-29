@@ -29,3 +29,6 @@
 ### VRFY
 
 - [ ] Implement (but say we don't do this)
+
+### SIZE
+- [ ] Actually check the size of the message
