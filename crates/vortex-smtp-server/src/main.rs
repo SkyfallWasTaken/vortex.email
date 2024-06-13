@@ -12,7 +12,7 @@ async fn main() -> Result<()> {
             rcpt_to,
             data,
         } => {
-            dbg!(event);
+            tracing::debug!(mail_from, rcpt_to = rcpt_to.join(", "), "Email received");
         }
     })
     .await?;
