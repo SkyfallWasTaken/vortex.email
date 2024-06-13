@@ -6,12 +6,15 @@ use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 mod consts;
 mod esmtp;
 mod messages;
+pub mod event;
+
+use event::{Event, EventHandler};
 use messages::Command;
 
 const ADDR: &str = "127.0.0.1:25";
 
-#[derive(Debug)]
-struct ConnState {
+#[derive(Debug, Clone)]
+pub struct State {
     esmtp: bool,
     greeting_done: bool,
 
@@ -21,10 +24,10 @@ struct ConnState {
     data: Option<Vec<u8>>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
-async fn process(mut socket: TcpStream) {
+async fn process(mut socket: TcpStream) -> State {
     let mut buf = vec![0; consts::MAX_SIZE];
 
-    let mut state = ConnState {
+    let mut state = State {
         esmtp: false,
         greeting_done: false,
 
@@ -39,7 +42,7 @@ async fn process(mut socket: TcpStream) {
     loop {
         let n = match socket.read(&mut buf).await {
             // socket closed
-            Ok(0) => return,
+            Ok(0) => return state,
             Ok(n) => n,
             Err(e) => {
                 panic!() // FIXME: oops.
@@ -146,14 +149,14 @@ async fn process(mut socket: TcpStream) {
                 Command::Quit => {
                     socket.write_all(messages::BYE).await.unwrap();
                     socket.shutdown().await.unwrap();
-                    return;
+                    return state;
                 }
             }
         }
     }
 }
 
-pub async fn listen<A: ToSocketAddrs>(addr: A) -> Result<()> {
+pub async fn listen<A: ToSocketAddrs>(addr: A, event_handler: EventHandler) -> Result<()> {
     let listener = TcpListener::bind(addr).await.unwrap();
 
     tracing::debug!("Listening on {ADDR}");
@@ -164,7 +167,8 @@ pub async fn listen<A: ToSocketAddrs>(addr: A) -> Result<()> {
         // moved to the new task and processed there.
         socket.set_nodelay(true).unwrap();
         tokio::spawn(async move {
-            process(socket).await;
+            let state = process(socket).await;
+            event_handler(Event::EmailReceived(state));
         });
     }
 }
