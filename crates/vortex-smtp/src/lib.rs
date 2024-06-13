@@ -5,8 +5,8 @@ use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 
 mod consts;
 mod esmtp;
-mod messages;
 pub mod event;
+mod messages;
 
 use event::{Event, EventHandler};
 use messages::Command;
@@ -168,7 +168,11 @@ pub async fn listen<A: ToSocketAddrs>(addr: A, event_handler: EventHandler) -> R
         socket.set_nodelay(true).unwrap();
         tokio::spawn(async move {
             let state = process(socket).await;
-            event_handler(Event::EmailReceived(state));
+            event_handler(Event::EmailReceived {
+                mail_from: state.mail_from.unwrap(),
+                rcpt_to: state.rcpt_to,
+                data: state.data.unwrap(),
+            });
         });
     }
 }
