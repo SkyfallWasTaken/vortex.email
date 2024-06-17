@@ -22,6 +22,10 @@ async fn main() -> Result<()> {
                     rcpt_to = email.rcpt_to.join(", "),
                     "Email received"
                 );
+
+                let key = email.mail_from.clone();
+                let mut emails = emails.get_mut(&key).unwrap();
+                emails.push(email.clone());
             }
         },
     )
