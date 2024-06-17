@@ -8,7 +8,7 @@ mod esmtp;
 pub mod event;
 mod messages;
 
-use event::{Event, EventHandler};
+use event::Event;
 use messages::Command;
 
 const ADDR: &str = "127.0.0.1:25";
@@ -24,7 +24,7 @@ pub struct State {
     data: Option<Vec<u8>>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
-async fn process(mut socket: TcpStream) -> State {
+async fn process<T: Fn(&str) -> bool>(mut socket: TcpStream, is_email_valid: T) -> State {
     let mut buf = vec![0; consts::MAX_SIZE];
 
     let mut state = State {
@@ -116,6 +116,13 @@ async fn process(mut socket: TcpStream) -> State {
                         continue;
                     }
 
+                    let email = email.to_string();
+                    let email = email.trim();
+                    if !is_email_valid(email) {
+                        socket.write_all(messages::USER_UNKNOWN).await.unwrap();
+                        continue;
+                    }
+
                     state.rcpt_to.push(email.to_string());
                     socket.write_all(messages::OK).await.unwrap();
                 }
@@ -156,23 +163,36 @@ async fn process(mut socket: TcpStream) -> State {
     }
 }
 
-pub async fn listen<A: ToSocketAddrs>(addr: A, event_handler: EventHandler) -> Result<()> {
+#[derive(Clone, Debug)]
+pub struct Email {
+    pub mail_from: String,
+    pub rcpt_to: Vec<String>,
+    pub data: Vec<u8>,
+}
+
+pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<()>
+where
+    A: ToSocketAddrs,
+    F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
+    G: Fn(Event) + Send + Sync + Clone + 'static,        // Added Clone here
+{
     let listener = TcpListener::bind(addr).await.unwrap();
 
     tracing::debug!("Listening on {ADDR}");
 
     loop {
         let (socket, _) = listener.accept().await.unwrap();
-        // A new task is spawned for each inbound socket. The socket is
-        // moved to the new task and processed there.
+        let validate_email_clone = validate_email.clone();
+        let handle_event_clone = handle_event.clone();
+
         socket.set_nodelay(true).unwrap();
         tokio::spawn(async move {
-            let state = process(socket).await;
-            event_handler(Event::EmailReceived {
+            let state = process(socket, validate_email_clone).await; // Use the cloned closure
+            handle_event_clone(Event::EmailReceived(crate::Email {
                 mail_from: state.mail_from.unwrap(),
                 rcpt_to: state.rcpt_to,
                 data: state.data.unwrap(),
-            });
+            }));
         });
     }
 }

@@ -1,20 +1,30 @@
 use color_eyre::Result;
-use vortex_smtp::event::Event;
+use dashmap::DashMap;
+use vortex_smtp::{event::Event, Email};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
     tracing_subscriber::fmt::init();
 
-    vortex_smtp::listen("0.0.0.0:25", |event| match &event {
-        Event::EmailReceived {
-            mail_from,
-            rcpt_to,
-            data,
-        } => {
-            tracing::debug!(mail_from, rcpt_to = rcpt_to.join(", "), "Email received");
-        }
-    })
+    let emails: DashMap<String, Vec<Email>> = DashMap::new();
+
+    vortex_smtp::listen(
+        "0.0.0.0:25",
+        move |email| {
+            tracing::debug!(email, "Validating email");
+            emails.contains_key(email)
+        },
+        |event| match &event {
+            Event::EmailReceived(email) => {
+                tracing::debug!(
+                    mail_from = email.mail_from,
+                    rcpt_to = email.rcpt_to.join(", "),
+                    "Email received"
+                );
+            }
+        },
+    )
     .await?;
 
     Ok(())

@@ -12,6 +12,7 @@ pub const DATA_RESPONSE: &[u8] = b"354 End data with <CR><LF>.<CR><LF>\n";
 pub const HELP_RESPONSE: &[u8] =
     b"214-go check out https://datatracker.ietf.org/doc/html/rfc5321\n";
 pub const UNRECOGNIZED_COMMAND: &[u8] = b"500 Unrecognized command\n";
+pub const USER_UNKNOWN: &[u8] = b"550 User unknown\n";
 pub const BYE: &[u8] = b"221 Bye\n";
 
 #[derive(Debug)]
