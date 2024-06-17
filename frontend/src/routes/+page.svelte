@@ -1,6 +1,33 @@
 <script lang="ts">
 	import AtSign from 'lucide-svelte/icons/at-sign';
+	import Mailbox from '$lib/components/mailbox/Mailbox.svelte';
+	import type { Email } from '$lib/email';
+	import { Mail } from 'lucide-svelte';
+	import { username } from '$lib/stores/mailbox';
+
+	let emails: Email[] = [
+		{
+			from: 'hi@skyfall.io',
+			subject: 'Welcome to Vortex!',
+			content: 'Welcome to Vortex! We are excited to have you on board.',
+			timestamp: Date.now().toString(),
+			id: 0,
+			read: false
+		},
+		{
+			from: 'hi@skyfall.io',
+			subject: 'Welcome to Vortex!',
+			content: 'Welcome to Vortex! We are excited to have you on board.',
+			timestamp: Date.now().toString(),
+			id: 0,
+			read: false
+		}
+	];
 </script>
+
+<svelte:head>
+	<title>Vortex - Free, disposable email addresses</title>
+</svelte:head>
 
 <div class="container mx-auto flex h-full items-center justify-center">
 	<div class="flex flex-col items-center space-y-10 text-center">
@@ -13,18 +40,16 @@
 		</p>
 
 		<div class="flex flex-col gap-4">
-			<p class="text-xl font-semibold">You are</p>
+			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-				<div class="input-group-shim"><AtSign /></div>
-				<input type="text" placeholder="shark" />
+				<div class="input-group-shim"><AtSign size="1.1rem" /></div>
+				<input type="text" placeholder="shark" value={$username} />
 				<div class="input-group-shim">@vortex.gg</div>
 			</div>
 		</div>
 
-		<div class="flex justify-center space-x-2">
-			<a class="variant-filled btn" href="https://skeleton.dev/" target="_blank" rel="noreferrer">
-				Launch Documentation
-			</a>
+		<div>
+			<Mailbox {emails} />
 		</div>
 	</div>
 </div>
