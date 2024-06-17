@@ -1,1 +1,24 @@
 /target
+
+# Frontend
+
+node_modules
+frontend/node_modules
+frontend/.output
+frontend/.vercel
+frontend/.svelte-kit
+frontend/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+frontend/vite.config.ts.timestamp-*
+frontend/vite.config.js.timestamp-*
