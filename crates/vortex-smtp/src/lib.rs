@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
@@ -9,8 +11,6 @@ mod messages;
 
 use event::Event;
 use messages::Command;
-
-const ADDR: &str = "127.0.0.1:25";
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -178,13 +178,13 @@ pub struct Email {
 
 pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
 where
-    A: ToSocketAddrs,
+    A: ToSocketAddrs + Display + Copy,
     F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
     G: Fn(Event) + Send + Sync + Clone + 'static,        // Added Clone here
 {
     let listener = TcpListener::bind(addr).await?;
 
-    tracing::debug!("listening on {ADDR}");
+    tracing::debug!("listening on {addr}");
 
     loop {
         let (socket, _) = listener.accept().await?;
