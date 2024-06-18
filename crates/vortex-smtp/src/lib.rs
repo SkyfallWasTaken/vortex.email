@@ -1,5 +1,6 @@
 use eyre::Result;
 
+use serde::Serialize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 
@@ -163,14 +164,14 @@ async fn process<T: Fn(&str) -> bool>(mut socket: TcpStream, is_email_valid: T) 
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Email {
     pub mail_from: String,
     pub rcpt_to: Vec<String>,
     pub data: Vec<u8>,
 }
 
-pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<()>
+pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G)
 where
     A: ToSocketAddrs,
     F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
