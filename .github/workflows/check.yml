@@ -42,7 +42,7 @@ jobs:
 
       - name: Run server and smtp-fuzz.pl in parallel
         run: |
-          sudo target/debug/vortex-smtp-server &
+          sudo target/debug/vortex-server &
           SERVER_PID=$!
           echo "Server running in background with PID $SERVER_PID"
 
