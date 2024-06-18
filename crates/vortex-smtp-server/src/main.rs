@@ -43,13 +43,17 @@ async fn main() -> Result<()> {
 
     let http_server = tokio::spawn(async {
         let router = Router::new()
+            .route("/", get(|| async { "OK :)" }))
             .route("/emails/:username", get(get_emails))
             .layer(Extension(emails_map_smtp));
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
+
+        tracing::debug!("http listening on {HTTP_ADDR}");
         axum::serve(listener, router)
     });
 
-    let _ = tokio::join!(smtp_server, http_server);
+    tracing::debug!("starting servers");
+    let _ = tokio::join!(http_server, smtp_server);
 
     Ok(())
 }
