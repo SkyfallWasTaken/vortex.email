@@ -20,8 +20,8 @@ pub enum Command<'a> {
     Helo { fqdn: &'a str },
     Ehlo { fqdn: &'a str },
 
-    MailFrom { email: String },
-    RcptTo { email: String },
+    MailFrom { email: &'a str },
+    RcptTo { email: &'a str },
     Data,
 
     Help,
@@ -45,12 +45,15 @@ impl<'a> Command<'a> {
 
                 if arg.starts_with("FROM:") {
                     let arg = msg.get(1)?;
-                    let email = arg[6..arg.len() - 1].to_string();
-
-                    if !email.is_empty() {
-                        return Some(Self::MailFrom { email });
+                    if let (Some(start), Some(end)) = (arg.find('<'), arg.find('>')) {
+                        // Extract the substring between the < and >
+                        let email = &arg[start + 1..end];
+                        if !email.is_empty() {
+                            return Some(Self::MailFrom { email });
+                        }
                     }
                 }
+
                 None
             }
             "RCPT" => {
@@ -58,12 +61,15 @@ impl<'a> Command<'a> {
 
                 if arg.starts_with("TO:") {
                     let arg = msg.get(1)?;
-                    let email = arg[4..arg.len() - 1].to_string();
-
-                    if !email.is_empty() {
-                        return Some(Self::RcptTo { email });
+                    if let (Some(start), Some(end)) = (arg.find('<'), arg.find('>')) {
+                        // Extract the substring between the < and >
+                        let email = &arg[start + 1..end];
+                        if !email.is_empty() {
+                            return Some(Self::RcptTo { email });
+                        }
                     }
                 }
+
                 None
             }
 
