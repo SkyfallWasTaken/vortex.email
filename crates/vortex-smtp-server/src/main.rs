@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use color_eyre::Result;
 use dashmap::DashMap;
 use vortex_smtp::{event::Event, Email};
@@ -7,15 +9,16 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     tracing_subscriber::fmt::init();
 
-    let emails: DashMap<String, Vec<Email>> = DashMap::new();
+    let emails_map: Arc<DashMap<String, Vec<Email>>> = Arc::new(DashMap::new());
+    let emails_map_clone1 = emails_map.clone();
 
     vortex_smtp::listen(
         "0.0.0.0:25",
         move |email| {
             tracing::debug!(email, "Validating email");
-            emails.contains_key(email)
+            emails_map_clone1.contains_key(email)
         },
-        |event| match &event {
+        move |event| match &event {
             Event::EmailReceived(email) => {
                 tracing::debug!(
                     mail_from = email.mail_from,
@@ -24,7 +27,7 @@ async fn main() -> Result<()> {
                 );
 
                 let key = email.mail_from.clone();
-                let mut emails = emails.get_mut(&key).unwrap();
+                let mut emails = emails_map.get_mut(&key).unwrap();
                 emails.push(email.clone());
             }
         },
