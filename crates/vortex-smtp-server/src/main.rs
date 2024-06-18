@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
     let smtp_server = vortex_smtp::listen(
         SMTP_ADDR,
         move |email| {
-            tracing::debug!(email, "Validating email");
+            tracing::debug!(email, "validating email");
             emails_map_validator.contains_key(email)
         },
         move |event| match &event {
@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
                 tracing::debug!(
                     mail_from = email.mail_from,
                     rcpt_to = email.rcpt_to.join(", "),
-                    "Email received"
+                    "email received"
                 );
 
                 let key = email.mail_from.clone();

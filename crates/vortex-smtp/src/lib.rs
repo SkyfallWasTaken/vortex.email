@@ -31,6 +31,7 @@ pub enum Error {
 pub struct State {
     esmtp: bool,
     greeting_done: bool,
+    finished: bool,
 
     mail_from: Option<String>,
     rcpt_to: Vec<String>,
@@ -47,6 +48,7 @@ async fn process<T: Fn(&str) -> bool>(
     let mut state = State {
         esmtp: false,
         greeting_done: false,
+        finished: false,
 
         mail_from: None,
         rcpt_to: Vec::new(),
@@ -70,10 +72,12 @@ async fn process<T: Fn(&str) -> bool>(
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
-            tracing::debug!("Data: {:?}", msg);
+            tracing::debug!("data: {:?}", msg);
             // TODO: is this correct?
             if msg.ends_with(".\n") {
                 state.waiting_for_data = false;
+                state.finished = true;
+
                 state
                     .data
                     .get_or_insert_with(Vec::new)
@@ -139,7 +143,7 @@ async fn process<T: Fn(&str) -> bool>(
                     }
 
                     state.waiting_for_data = true;
-                    tracing::debug!("Waiting for data");
+                    tracing::debug!("waiting for data");
                     socket.write_all(messages::DATA_RESPONSE).await?;
                 }
 
@@ -180,7 +184,7 @@ where
 {
     let listener = TcpListener::bind(addr).await?;
 
-    tracing::debug!("Listening on {ADDR}");
+    tracing::debug!("listening on {ADDR}");
 
     loop {
         let (socket, _) = listener.accept().await?;
@@ -191,14 +195,20 @@ where
         tokio::spawn(async move {
             let result: Result<(), Error> = async {
                 let state = process(socket, validate_email_clone).await?;
-                if state.rcpt_to.is_empty() {
-                    return Err(Error::RcptToMissing);
+
+                if state.finished {
+                    if state.rcpt_to.is_empty() {
+                        return Err(Error::RcptToMissing);
+                    }
+                    handle_event_clone(Event::EmailReceived(crate::Email {
+                        mail_from: state.mail_from.ok_or(Error::MailFromMissing)?,
+                        rcpt_to: state.rcpt_to,
+                        data: state.data.ok_or(Error::DataMissing)?,
+                    }));
+                } else {
+                    tracing::debug!("connection closed before finishing");
                 }
-                handle_event_clone(Event::EmailReceived(crate::Email {
-                    mail_from: state.mail_from.ok_or(Error::MailFromMissing)?,
-                    rcpt_to: state.rcpt_to,
-                    data: state.data.ok_or(Error::DataMissing)?,
-                }));
+
                 Ok(())
             }
             .await;
