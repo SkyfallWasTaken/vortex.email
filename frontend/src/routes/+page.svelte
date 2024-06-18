@@ -43,7 +43,7 @@
 			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
 				<div class="input-group-shim"><AtSign size="1.1rem" /></div>
-				<input type="text" placeholder="shark" value={$username} />
+				<input type="text" placeholder="shark" bind:value={$username} />
 				<div class="input-group-shim">@vortex.gg</div>
 			</div>
 		</div>
