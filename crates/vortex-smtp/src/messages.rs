@@ -15,7 +15,7 @@ pub const UNRECOGNIZED_COMMAND: &[u8] = b"500 Unrecognized command\n";
 pub const USER_UNKNOWN: &[u8] = b"550 User unknown\n";
 pub const BYE: &[u8] = b"221 Bye\n";
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Command<'a> {
     Helo { fqdn: &'a str },
     Ehlo { fqdn: &'a str },
@@ -75,5 +75,100 @@ impl<'a> Command<'a> {
             "QUIT" => Some(Self::Quit),
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_helo() {
+        assert_eq!(
+            Command::from_smtp_message("HELO smtp.example.org"),
+            Some(Command::Helo {
+                fqdn: "smtp.example.org"
+            })
+        );
+    }
+
+    #[test]
+    fn test_ehlo() {
+        assert_eq!(
+            Command::from_smtp_message("EHLO smtp.example.org"),
+            Some(Command::Ehlo {
+                fqdn: "smtp.example.org"
+            })
+        );
+    }
+
+    #[test]
+    fn test_mail_from() {
+        assert_eq!(
+            Command::from_smtp_message("MAIL FROM:<test@skyfall.com>"),
+            Some(Command::MailFrom {
+                email: "test@skyfall.com".into()
+            })
+        );
+        assert_eq!(Command::from_smtp_message("MAIL FROM:<"), None);
+        assert_eq!(Command::from_smtp_message("MAIL FROM:<hi"), None);
+    }
+
+    #[test]
+    fn test_rcpt_to() {
+        assert_eq!(
+            Command::from_smtp_message("RCPT TO:<test@skyfall.com>"),
+            Some(Command::RcptTo {
+                email: "test@skyfall.com".into()
+            })
+        );
+        assert_eq!(Command::from_smtp_message("RCPT TO:<"), None);
+        assert_eq!(Command::from_smtp_message("RCPT TO:<hi"), None);
+    }
+
+    #[test]
+    fn case_insensitive_commands() {
+        assert_eq!(Command::from_smtp_message("help"), Some(Command::Help));
+    }
+    #[test]
+    fn command_argument_casing_is_kept() {
+        assert_eq!(
+            Command::from_smtp_message("MAIL FROM:<Test@test.com>"),
+            Some(Command::MailFrom {
+                email: "Test@test.com".into()
+            })
+        );
+        assert_eq!(
+            Command::from_smtp_message("RCPT TO:<Test@test.com>"),
+            Some(Command::RcptTo {
+                email: "Test@test.com".into()
+            })
+        );
+        assert_eq!(
+            Command::from_smtp_message("HELO Test.com"),
+            Some(Command::Helo { fqdn: "Test.com" })
+        )
+    }
+
+    // Miscellaneous. Will probably never fail lol (famous last words)
+    #[test]
+    fn test_data() {
+        assert_eq!(Command::from_smtp_message("DATA"), Some(Command::Data));
+    }
+    #[test]
+    fn test_help() {
+        assert_eq!(Command::from_smtp_message("HELP"), Some(Command::Help));
+    }
+    #[test]
+    fn test_noop() {
+        assert_eq!(Command::from_smtp_message("NOOP"), Some(Command::NoOp));
+    }
+    #[test]
+    fn test_rset() {
+        assert_eq!(Command::from_smtp_message("RSET"), Some(Command::Rset));
+    }
+    #[test]
+    fn test_quit() {
+        assert_eq!(Command::from_smtp_message("QUIT"), Some(Command::Quit));
     }
 }
