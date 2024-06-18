@@ -17,35 +17,41 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let emails_map: Arc<EmailsMap> = Arc::new(DashMap::new());
-    let emails_map_clone1 = emails_map.clone();
+    let emails_map_http = emails_map.clone();
 
     let smtp_server = vortex_smtp::listen(
         SMTP_ADDR,
-        move |email| {
-            tracing::debug!(email, "Validating email");
-            emails_map_clone1.contains_key(email)
+        {
+            let emails_map_smtp = emails_map.clone();
+            move |email| {
+                tracing::debug!(email, "Validating email");
+                emails_map_smtp.contains_key(email)
+            }
         },
-        move |event| match &event {
-            Event::EmailReceived(email) => {
-                tracing::debug!(
-                    mail_from = email.mail_from,
-                    rcpt_to = email.rcpt_to.join(", "),
-                    "Email received"
-                );
+        {
+            let emails_map_smtp = emails_map.clone();
+            move |event| match &event {
+                Event::EmailReceived(email) => {
+                    tracing::debug!(
+                        mail_from = email.mail_from,
+                        rcpt_to = email.rcpt_to.join(", "),
+                        "Email received"
+                    );
 
-                let key = email.mail_from.clone();
-                let mut emails = emails_map.get_mut(&key).unwrap();
-                emails.push(email.clone());
+                    let key = email.mail_from.clone();
+                    let mut emails = emails_map_smtp.get_mut(&key).unwrap();
+                    emails.push(email.clone());
+                }
             }
         },
     );
 
-    let http_server = tokio::spawn(async {
+    let http_server = tokio::spawn(async move {
         let router = Router::new()
             .route("/emails/:username", get(get_emails))
-            .layer(Extension(emails_map));
+            .layer(Extension(emails_map_http));
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
-        axum::serve(listener, router)
+        axum::serve(listener, router).await.unwrap();
     });
 
     let _ = tokio::join!(smtp_server, http_server);
