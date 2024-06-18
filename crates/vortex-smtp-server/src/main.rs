@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use axum::{http::StatusCode, routing::get, Extension, Json, Router};
-use color_eyre::Result;
+use color_eyre::{Report, Result};
 use dashmap::DashMap;
+use futures_util::TryFutureExt;
 use tokio::net::TcpListener;
 use vortex_smtp::{event::Event, Email};
 
@@ -53,7 +54,10 @@ async fn main() -> Result<()> {
     });
 
     tracing::debug!("starting servers");
-    let _ = tokio::join!(http_server, smtp_server);
+    let _ = tokio::try_join!(
+        http_server.map_err(Report::from),
+        smtp_server.map_err(Report::from)
+    );
 
     Ok(())
 }
