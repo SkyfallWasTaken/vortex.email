@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt::Display;
 
 use serde::Serialize;
@@ -173,7 +174,7 @@ async fn process<T: Fn(&str) -> bool>(
 pub struct Email {
     pub mail_from: String,
     pub rcpt_to: Vec<String>,
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
@@ -200,10 +201,12 @@ where
                     if state.rcpt_to.is_empty() {
                         return Err(Error::RcptToMissing);
                     }
+
                     handle_event_clone(Event::EmailReceived(crate::Email {
                         mail_from: state.mail_from.ok_or(Error::MailFromMissing)?,
                         rcpt_to: state.rcpt_to,
-                        data: state.data.ok_or(Error::DataMissing)?,
+                        data: String::from_utf8_lossy(&state.data.ok_or(Error::DataMissing)?)
+                            .to_string(), // FIXME: this is inefficient.
                     }));
                 } else {
                     tracing::debug!("connection closed before finishing");
