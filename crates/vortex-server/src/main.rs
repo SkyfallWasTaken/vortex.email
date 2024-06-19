@@ -71,7 +71,6 @@ async fn get_emails(
 
     Extension(emails_map): Extension<Arc<EmailsMap>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
-    dbg!(username.clone());
     let emails_map = emails_map.as_ref();
     match emails_map.get(&username) {
         Some(emails) => (StatusCode::OK, Json(emails.clone())),
