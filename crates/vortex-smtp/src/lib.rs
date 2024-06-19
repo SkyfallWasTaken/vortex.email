@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt::Display;
 
 use serde::Serialize;
@@ -65,7 +64,7 @@ async fn process<T: Fn(&str) -> bool>(
             Ok(0) => return Ok(state),
             Ok(n) => n,
             Err(e) => {
-                panic!() // FIXME: oops.
+                return Err(Error::NetworkError(e));
             }
         };
 
