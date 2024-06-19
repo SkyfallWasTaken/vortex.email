@@ -64,11 +64,15 @@ async fn main() -> Result<()> {
 }
 
 async fn get_emails(
-    Extension(emails_map): Extension<Arc<EmailsMap>>,
+    Extension(emails_map): Extension<EmailsMap>,
     username: String,
 ) -> (StatusCode, Json<Vec<Email>>) {
-    let Some(emails) = emails_map.get(&username) else {
-        return (StatusCode::NOT_FOUND, Json(vec![])); // TODO: this response is bad
-    };
-    (StatusCode::OK, Json(emails.clone()))
+    match emails_map.get(&username) {
+        Some(emails) => (StatusCode::OK, Json(emails.clone())),
+        None => {
+            tracing::info!(username, "not found, adding to map");
+            emails_map.insert(username.clone(), Vec::new());
+            (StatusCode::CREATED, Json(Vec::new()))
+        }
+    }
 }
