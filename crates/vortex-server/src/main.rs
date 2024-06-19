@@ -59,6 +59,7 @@ async fn main() -> Result<()> {
         smtp_server.map_err(Report::from)
     )?;
     http_result?;
+    tracing::debug!("exiting.");
 
     Ok(())
 }
