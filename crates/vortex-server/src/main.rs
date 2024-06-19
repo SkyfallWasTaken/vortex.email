@@ -1,10 +1,17 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, routing::get, Extension, Json, Router};
+use axum::{
+    extract::Path,
+    http::{Method, StatusCode},
+    routing::get,
+    Extension, Json, Router,
+};
 use color_eyre::{Report, Result};
 use dashmap::DashMap;
 use futures_util::TryFutureExt;
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
+
 use vortex_smtp::{event::Event, Email};
 
 const HTTP_ADDR: &str = "0.0.0.0:3000";
@@ -45,10 +52,16 @@ async fn main() -> Result<()> {
     );
 
     let http_server = tokio::spawn(async {
+        let cors = CorsLayer::new()
+            .allow_methods([Method::GET])
+            // FIXME: this allows requests from any origin
+            .allow_origin(Any);
+
         let router = Router::new()
             .route("/", get(|| async { "OK :)" }))
             .route("/emails/:username", get(get_emails))
-            .layer(Extension(emails_map_smtp));
+            .layer(Extension(emails_map_smtp))
+            .layer(cors);
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
 
         tracing::debug!("http listening on {HTTP_ADDR}");

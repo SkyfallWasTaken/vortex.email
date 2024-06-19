@@ -1,8 +1,6 @@
 export type Email = {
-    id: number;
-    from: string;
-    subject: string;
-    content: string;
-    timestamp: string;
+    id: string;
+    mail_from: string;
+    data: string;
     read: boolean;
 };

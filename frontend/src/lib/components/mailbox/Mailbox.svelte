@@ -2,6 +2,8 @@
 	import type { Email } from '$lib/email';
 	import MailboxEmail from './Email.svelte';
 	export let emails: Email[];
+
+	console.log(emails);
 </script>
 
 <div class="dark:bg-surface-500 light-bg rounded-md p-6 shadow-sm">

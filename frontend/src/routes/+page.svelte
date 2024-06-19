@@ -4,25 +4,7 @@
 	import type { Email } from '$lib/email';
 	import { Mail } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
-
-	let emails: Email[] = [
-		{
-			from: 'hi@skyfall.io',
-			subject: 'Welcome to Vortex!',
-			content: 'Welcome to Vortex! We are excited to have you on board.',
-			timestamp: Date.now().toString(),
-			id: 0,
-			read: false
-		},
-		{
-			from: 'hi@skyfall.io',
-			subject: 'Welcome to Vortex!',
-			content: 'Welcome to Vortex! We are excited to have you on board.',
-			timestamp: Date.now().toString(),
-			id: 0,
-			read: false
-		}
-	];
+	import { ofetch } from 'ofetch';
 </script>
 
 <svelte:head>
@@ -49,7 +31,15 @@
 		</div>
 
 		<div>
-			<Mailbox {emails} />
+			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.gg`)}
+				<div
+					class="dark:bg-surface-500 light-bg flex items-center justify-center rounded-md p-6 shadow-sm"
+				>
+					<p class="text-lg font-semibold">One sec...</p>
+				</div>
+			{:then emails}
+				<Mailbox {emails} />
+			{/await}
 		</div>
 	</div>
 </div>
