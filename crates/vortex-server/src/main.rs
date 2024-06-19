@@ -50,14 +50,15 @@ async fn main() -> Result<()> {
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
 
         tracing::debug!("http listening on {HTTP_ADDR}");
-        axum::serve(listener, router)
+        axum::serve(listener, router).await
     });
 
     tracing::debug!("starting servers");
-    let _ = tokio::try_join!(
+    let (http_result, _) = tokio::try_join!(
         http_server.map_err(Report::from),
         smtp_server.map_err(Report::from)
-    );
+    )?;
+    http_result?;
 
     Ok(())
 }
