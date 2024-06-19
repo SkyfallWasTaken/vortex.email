@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{http::StatusCode, routing::get, Extension, Json, Router};
+use axum::{extract::Path, http::StatusCode, routing::get, Extension, Json, Router};
 use color_eyre::{Report, Result};
 use dashmap::DashMap;
 use futures_util::TryFutureExt;
@@ -35,9 +35,11 @@ async fn main() -> Result<()> {
                     "email received"
                 );
 
-                let key = email.mail_from.clone();
-                let mut emails = emails_map.get_mut(&key).unwrap();
-                emails.push(email.clone());
+                let keys = email.rcpt_to.clone();
+                for key in keys {
+                    let mut emails = emails_map.get_mut(&key).unwrap();
+                    emails.push(email.clone());
+                }
             }
         },
     );
@@ -65,13 +67,16 @@ async fn main() -> Result<()> {
 }
 
 async fn get_emails(
-    Extension(emails_map): Extension<EmailsMap>,
-    username: String,
+    Path(username): Path<String>,
+
+    Extension(emails_map): Extension<Arc<EmailsMap>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
+    dbg!(username.clone());
+    let emails_map = emails_map.as_ref();
     match emails_map.get(&username) {
         Some(emails) => (StatusCode::OK, Json(emails.clone())),
         None => {
-            tracing::info!(username, "not found, adding to map");
+            tracing::info!(username, "mailbox not found, adding to map");
             emails_map.insert(username.clone(), Vec::new());
             (StatusCode::CREATED, Json(Vec::new()))
         }
