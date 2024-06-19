@@ -68,7 +68,6 @@ async fn main() -> Result<()> {
 
 async fn get_emails(
     Path(username): Path<String>,
-
     Extension(emails_map): Extension<Arc<EmailsMap>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
     let emails_map = emails_map.as_ref();

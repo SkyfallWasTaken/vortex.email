@@ -9,3 +9,4 @@ tokio = { version = "1.37.0", features = ["net", "io-util"] }
 tracing = "0.1.40"
 serde = { version = "1.0.203", features = ["derive"] }
 thiserror = "1.0.61"
+nanoid = "0.4.0"

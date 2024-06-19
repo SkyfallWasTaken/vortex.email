@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use nanoid::nanoid;
 use serde::Serialize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
@@ -174,6 +175,10 @@ pub struct Email {
     pub mail_from: String,
     pub rcpt_to: Vec<String>,
     pub data: String,
+    // FIXME: this is *probably* the wrong place to put this.
+    // However, it's also the easiest way.
+    // Get rid of this ASAP.
+    pub id: String,
 }
 
 pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
@@ -206,6 +211,7 @@ where
                         rcpt_to: state.rcpt_to,
                         data: String::from_utf8_lossy(&state.data.ok_or(Error::DataMissing)?)
                             .to_string(), // FIXME: this is inefficient.
+                        id: nanoid!(),
                     }));
                 } else {
                     tracing::debug!("connection closed before finishing");
