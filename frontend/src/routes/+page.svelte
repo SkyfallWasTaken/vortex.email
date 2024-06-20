@@ -31,13 +31,16 @@
 		<div>
 			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.club`)}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
 			{:then emails}
 				<Mailbox {emails} />
 			{/await}
+			<p class="my-4 text-gray-400">
+				Hint: <a href="/" class="text-sky-400 hover:underline">refresh the page</a> to see new emails.
+			</p>
 		</div>
 	</div>
 </div>
