@@ -24,12 +24,12 @@
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
 				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
 				<input type="text" placeholder="shark" bind:value={$username} />
-				<div class="input-group-shim">@vortex.club</div>
+				<div class="input-group-shim">@vortex.dino.icu</div>
 			</div>
 		</div>
 
 		<div>
-			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.club`)}
+			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.dino.icu`)}
 				<div
 					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>

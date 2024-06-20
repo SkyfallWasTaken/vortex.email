@@ -18,7 +18,7 @@ use vortex_smtp::{event::Event, Email};
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:25";
 
-const ALLOWED_DOMAINS: [&str; 1] = ["vortex.club"];
+const ALLOWED_DOMAINS: [&str; 1] = ["vortex.dino.icu"];
 
 type EmailsMap = DashMap<String, Vec<Email>>;
 
