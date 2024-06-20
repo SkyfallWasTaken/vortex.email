@@ -39,7 +39,20 @@
 		</svelte:fragment>
 
 		<svelte:fragment slot="content">
-			<iframe title={parsedEmail.subject} frameborder="0" sandbox="" bind:this={iframe}></iframe>
+			{#if parsedEmail.html}
+				<iframe
+					bind:this={iframe}
+					class="h-full w-full"
+					style="height: 50vh;"
+					frameborder="0"
+					title={parsedEmail.subject || 'No subject'}
+					sandbox=""
+				></iframe>
+			{:else if parsedEmail.text}
+				<div class="whitespace-pre-wrap text-left">
+					{parsedEmail.text}
+				</div>
+			{/if}
 		</svelte:fragment>
 	</AccordionItem>
 {/if}
