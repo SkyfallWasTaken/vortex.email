@@ -1,4 +1,4 @@
-name: Check Vortex backend
+name: Check Vortex frontend
 
 on:
   push:
@@ -9,8 +9,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     defaults:
-        run:
-          working-directory: ./frontend  
+      run:
+        working-directory: ./frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: bun install
-          
+
       - name: Run svelte-check
         run: bun run check
 
