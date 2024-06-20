@@ -29,9 +29,9 @@
 		</div>
 
 		<div>
-			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.gg`)}
+			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.club`)}
 				<div
-					class="dark:bg-surface-500 light-bg flex items-center justify-center rounded-md p-6 shadow-sm"
+					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
