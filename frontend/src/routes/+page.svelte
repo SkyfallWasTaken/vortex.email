@@ -1,8 +1,6 @@
 <script lang="ts">
-	import AtSign from 'lucide-svelte/icons/at-sign';
 	import Mailbox from '$lib/components/mailbox/Mailbox.svelte';
-	import type { Email } from '$lib/email';
-	import { Mail } from 'lucide-svelte';
+	import { Mail as MailIcon } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
 </script>
@@ -24,7 +22,7 @@
 		<div class="flex flex-col gap-4">
 			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-				<div class="input-group-shim"><AtSign size="1.1rem" /></div>
+				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
 				<input type="text" placeholder="shark" bind:value={$username} />
 				<div class="input-group-shim">@vortex.gg</div>
 			</div>
