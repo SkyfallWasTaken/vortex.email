@@ -1,0 +1,28 @@
+name: Check Vortex backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+          working-directory: ./frontend  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+          
+      - name: Run svelte-check
+        run: bun run check
+
+      - name: Run Prettier and ESLint checks
+        run: bun run lint
