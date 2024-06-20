@@ -75,14 +75,14 @@ async fn process<T: Fn(&str) -> bool>(
             // TODO: Implement dot stuffing
             tracing::debug!("data: {:?}", msg);
             // TODO: is this correct?
-            if msg.ends_with(".\n") {
+            if msg.ends_with("\r\n.\r\n") {
                 state.waiting_for_data = false;
                 state.finished = true;
 
                 state
                     .data
                     .get_or_insert_with(Vec::new)
-                    .extend_from_slice(&buf[0..n - 2]); // Don't include the trailing .\n
+                    .extend_from_slice(&buf[0..n - 5]); // Don't include the \r\n.\r\n
                 socket.write_all(messages::OK).await?;
             } else {
                 state
