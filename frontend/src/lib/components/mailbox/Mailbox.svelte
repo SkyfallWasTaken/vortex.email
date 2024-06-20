@@ -3,23 +3,25 @@
 	import { Accordion } from '@skeletonlabs/skeleton';
 	import MailboxEmail from './Email.svelte';
 	export let emails: Email[];
-
-	console.log(emails);
 </script>
 
-<div class="dark:bg-surface-500 light-bg w-full rounded-md p-6 shadow-sm">
-	{#if emails.length != 0}
-		<Accordion>
-			{#each emails as email}
-				<div class="border-b border-gray-400 pb-2 last:border-b-0 last:pb-0 dark:border-slate-700">
-					<MailboxEmail {email} />
-				</div>
-			{/each}
-		</Accordion>
-	{:else}
-		<p class="text-lg font-semibold">No emails... yet</p>
-		<p>You're all caught up! Go out and do what you do best.</p>
-	{/if}
+<div class="flex w-screen justify-center">
+	<div class="dark:bg-surface-500 light-bg w-5/6 rounded-md p-4 shadow-sm sm:w-4/5">
+		{#if emails.length != 0}
+			<Accordion>
+				{#each emails as email}
+					<div
+						class="border-b border-gray-400 pb-2 last:border-b-0 last:pb-0 dark:border-slate-700"
+					>
+						<MailboxEmail {email} />
+					</div>
+				{/each}
+			</Accordion>
+		{:else}
+			<p class="text-lg font-semibold">No emails... yet</p>
+			<p>You're all caught up! Go out and do what you do best.</p>
+		{/if}
+	</div>
 </div>
 
 <style>
