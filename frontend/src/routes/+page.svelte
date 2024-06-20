@@ -24,7 +24,7 @@
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
 				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
 				<input type="text" placeholder="shark" bind:value={$username} />
-				<div class="input-group-shim">@vortex.gg</div>
+				<div class="input-group-shim">@vortex.club</div>
 			</div>
 		</div>
 

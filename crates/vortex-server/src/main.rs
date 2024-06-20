@@ -8,6 +8,7 @@ use axum::{
 };
 use color_eyre::{Report, Result};
 use dashmap::DashMap;
+use email_address_parser::EmailAddress;
 use futures_util::TryFutureExt;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
@@ -16,6 +17,8 @@ use vortex_smtp::{event::Event, Email};
 
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:25";
+
+const ALLOWED_DOMAINS: [&str; 1] = ["vortex.club"];
 
 type EmailsMap = DashMap<String, Vec<Email>>;
 
@@ -32,7 +35,7 @@ async fn main() -> Result<()> {
         SMTP_ADDR,
         move |email| {
             tracing::debug!(email, "validating email");
-            emails_map_validator.contains_key(email)
+            validate_vortex_email(&email) && emails_map_validator.contains_key(email)
         },
         move |event| match &event {
             Event::EmailReceived(email) => {
@@ -59,7 +62,7 @@ async fn main() -> Result<()> {
 
         let router = Router::new()
             .route("/", get(|| async { "OK :)" }))
-            .route("/emails/:username", get(get_emails))
+            .route("/emails/:email", get(get_emails))
             .layer(Extension(emails_map_smtp))
             .layer(cors);
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
@@ -80,16 +83,29 @@ async fn main() -> Result<()> {
 }
 
 async fn get_emails(
-    Path(username): Path<String>,
+    Path(email): Path<String>,
     Extension(emails_map): Extension<Arc<EmailsMap>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
     let emails_map = emails_map.as_ref();
-    match emails_map.get(&username) {
-        Some(emails) => (StatusCode::OK, Json(emails.clone())),
-        None => {
-            tracing::info!(username, "mailbox not found, adding to map");
-            emails_map.insert(username.clone(), Vec::new());
-            (StatusCode::CREATED, Json(Vec::new()))
+
+    if validate_vortex_email(&email) {
+        match emails_map.get(&email) {
+            Some(emails) => (StatusCode::OK, Json(emails.clone())),
+            None => {
+                tracing::info!(email, "mailbox not found, adding to map");
+                emails_map.insert(email.clone(), Vec::new());
+                (StatusCode::CREATED, Json(Vec::new()))
+            }
         }
+    } else {
+        (StatusCode::BAD_REQUEST, Json(Vec::new())) // TODO: returning a new Vec here is wrong.
     }
+}
+
+fn validate_vortex_email(email: &str) -> bool {
+    // The `None` here means that we use strict email parsing.
+    let Some(parsed) = EmailAddress::parse(email, None) else {
+        return false;
+    };
+    ALLOWED_DOMAINS.contains(&parsed.get_domain())
 }
