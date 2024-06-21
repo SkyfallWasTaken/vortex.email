@@ -3,6 +3,8 @@
 	import { Mail as MailIcon } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
+
+	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
 </script>
 
 <svelte:head>
@@ -24,14 +26,16 @@
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
 				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
 				<input type="text" placeholder="shark" bind:value={$username} />
-				<div class="input-group-shim">@vortex.dino.icu</div>
+				<div class="input-group-shim">@{emailDomain}</div>
 			</div>
 		</div>
 
+		<hr />
+
 		<div>
-			{#await ofetch(`http://localhost:3000/emails/${$username}@vortex.dino.icu`)}
+			{#await ofetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`)}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
