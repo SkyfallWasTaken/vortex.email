@@ -35,7 +35,7 @@
 		<div>
 			{#await ofetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`)}
 				<div
-					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
+					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
