@@ -11,7 +11,9 @@ You will need:
 - Bun
 - Node.js (to actually run the project)
 
-Additionally, if you want to run the server, we recommend Docker.
+Additionally, if you want to run the server, we recommend:
+- Docker
+- Caddy
 
 ### Building the SMTP server
 
@@ -54,12 +56,20 @@ Run it anywhere, e.g. Vercel. Ensure environment variables are set.
 
 ##### Backend
 
+This assumes that you are using Docker and Caddy.
+
 Firstly, create a new user for Vortex.
 
 Secondly, [install rootless Docker.](https://docs.docker.com/engine/security/rootless) for the Vortex user.
 
-Finally, use this Docker command:
+Then this Docker command:
 
 ```bash
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE -d -p 25:25 ghcr.io/skyfallwastaken/vortex.email:latest
+docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE -d -p 25:25 -p 3000:3000 ghcr.io/skyfallwastaken/vortex.email:latest
+```
+
+And finally, this Caddy reverse proxy command:
+
+```bash
+caddy reverse-proxy --from <your api domain> --to :3000
 ```
