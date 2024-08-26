@@ -43,7 +43,7 @@
 				<iframe
 					bind:this={iframe}
 					class="h-full w-full"
-					style="height: 50vh;"
+					style="height: 50vh; background-color: white;"
 					frameborder="0"
 					title={parsedEmail.subject || 'No subject'}
 					sandbox=""
