@@ -4,11 +4,16 @@
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
 	import { goto } from '$app/navigation';
+	import { debounce } from '$lib/util';
 
 	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
 
 	function refreshPage() {
 		goto(window.location.href);
+	}
+
+	function setUsername(event: KeyboardEvent) {
+		username.set((event.target as HTMLInputElement).value);
 	}
 </script>
 
@@ -30,7 +35,7 @@
 			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
 				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
-				<input type="text" placeholder="shark" bind:value={$username} />
+				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} />
 				<div class="input-group-shim">@{emailDomain}</div>
 			</div>
 		</div>
