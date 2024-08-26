@@ -46,7 +46,7 @@
 					style="height: 50vh; background-color: white;"
 					frameborder="0"
 					title={parsedEmail.subject || 'No subject'}
-					sandbox=""
+					sandbox="allow-same-origin allow-popups"
 				></iframe>
 			{:else if parsedEmail.text}
 				<div class="whitespace-pre-wrap text-left">
