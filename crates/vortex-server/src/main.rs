@@ -61,7 +61,10 @@ async fn main() -> Result<()> {
             .allow_origin(Any);
 
         let router = Router::new()
-            .route("/", get(|| async { "OK :)" }))
+            .route(
+                "/",
+                get(|| async { format!("vortex-server v{}", env!("CARGO_PKG_VERSION")) }),
+            )
             .route("/emails/:email", get(get_emails))
             .layer(Extension(emails_map_smtp))
             .layer(cors);
