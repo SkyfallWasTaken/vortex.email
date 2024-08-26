@@ -92,7 +92,7 @@ async fn process<T: Fn(&str) -> bool>(
                     .extend_from_slice(&buf[0..n]);
             }
         } else {
-            let Some(command) = Command::from_smtp_message(&msg) else {
+            let Some(command) = Command::from_smtp_message(&msg.trim()) else {
                 socket.write_all(messages::UNRECOGNIZED_COMMAND).await?;
                 continue;
             };
