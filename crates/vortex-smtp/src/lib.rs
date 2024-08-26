@@ -110,6 +110,7 @@ async fn process<T: Fn(&str) -> bool>(
                     for ext in esmtp::SUPPORTED_EXTENSIONS {
                         socket.write_all(format!("250-{ext}\n").as_bytes()).await?;
                     }
+                    socket.write_all(b"250 SMTPUTF8").await?;
                 }
 
                 Command::MailFrom { email } => {
