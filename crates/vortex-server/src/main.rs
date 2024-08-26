@@ -104,7 +104,6 @@ async fn get_emails(
 
 fn validate_vortex_email(email: &str) -> bool {
     // The `None` here means that we use strict email parsing.
-    dbg!(email);
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
