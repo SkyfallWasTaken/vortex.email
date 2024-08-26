@@ -115,9 +115,9 @@ async fn process<T: Fn(&str) -> bool>(
                     response.extend_from_slice(messages::HELO_RESPONSE);
 
                     for ext in esmtp::SUPPORTED_EXTENSIONS {
-                        response.extend_from_slice(format!("250-{ext}\n").as_bytes());
+                        response.extend_from_slice(format!("250-{ext}\r\n").as_bytes());
                     }
-                    response.extend_from_slice(b"250 SMTPUTF8");
+                    response.extend_from_slice(b"250 SMTPUTF8\r\n");
 
                     socket.write_all(&response).await?;
                 }
