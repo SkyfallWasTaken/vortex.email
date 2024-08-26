@@ -110,12 +110,16 @@ async fn process<T: Fn(&str) -> bool>(
                     tracing::trace!("EHLO");
                     state.greeting_done = true;
                     state.esmtp = true;
-                    socket.write_all(messages::HELO_RESPONSE).await?;
+
+                    let mut response = Vec::new();
+                    response.extend_from_slice(messages::HELO_RESPONSE);
 
                     for ext in esmtp::SUPPORTED_EXTENSIONS {
-                        socket.write_all(format!("250-{ext}\n").as_bytes()).await?;
+                        response.extend_from_slice(format!("250-{ext}\n").as_bytes());
                     }
-                    socket.write_all(b"250 SMTPUTF8").await?;
+                    response.extend_from_slice(b"250 SMTPUTF8");
+
+                    socket.write_all(&response).await?;
                 }
 
                 Command::MailFrom { email } => {
