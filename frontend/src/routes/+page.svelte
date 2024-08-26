@@ -3,8 +3,13 @@
 	import { Mail as MailIcon } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
+	import { goto } from '$app/navigation';
 
 	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
+
+	function refreshPage() {
+		goto(window.location.href);
+	}
 </script>
 
 <svelte:head>
@@ -35,7 +40,7 @@
 		<div>
 			{#await ofetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`)}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
@@ -43,7 +48,9 @@
 				<Mailbox {emails} />
 			{/await}
 			<p class="my-4 text-gray-400">
-				Hint: <a href="/" class="text-sky-400 hover:underline">refresh the page</a> to see new emails.
+				Hint: <a href="/" class="text-sky-400 hover:underline" on:click={refreshPage}
+					>refresh the page</a
+				> to see new emails.
 			</p>
 		</div>
 	</div>
