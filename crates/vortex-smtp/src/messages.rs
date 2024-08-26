@@ -79,7 +79,10 @@ impl<'a> Command<'a> {
             "NOOP" => Some(Self::NoOp),
             "RSET" => Some(Self::Rset),
             "QUIT" => Some(Self::Quit),
-            _ => None,
+            _ => {
+                tracing::trace!("Unrecognized command: {}", cmd);
+                None
+            }
         }
     }
 }

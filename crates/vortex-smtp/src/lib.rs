@@ -70,7 +70,7 @@ async fn process<T: Fn(&str) -> bool>(
         };
 
         let msg = String::from_utf8_lossy(&buf[0..n]);
-        tracing::debug!("received: {:?}", msg);
+        tracing::trace!("received: {:?}", msg);
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
@@ -79,6 +79,7 @@ async fn process<T: Fn(&str) -> bool>(
             if msg.ends_with("\r\n.\r\n") {
                 state.waiting_for_data = false;
                 state.finished = true;
+                tracing::trace!("got . in data, ending");
 
                 state
                     .data
@@ -86,6 +87,7 @@ async fn process<T: Fn(&str) -> bool>(
                     .extend_from_slice(&buf[0..n - 5]); // Don't include the \r\n.\r\n
                 socket.write_all(messages::OK).await?;
             } else {
+                tracing::trace!("adding {n} bytes to data");
                 state
                     .data
                     .get_or_insert_with(Vec::new)
@@ -93,16 +95,19 @@ async fn process<T: Fn(&str) -> bool>(
             }
         } else {
             let Some(command) = Command::from_smtp_message(&msg.trim()) else {
+                tracing::trace!("command unrecognised");
                 socket.write_all(messages::UNRECOGNIZED_COMMAND).await?;
                 continue;
             };
             match command {
                 Command::Helo { fqdn } => {
+                    tracing::trace!("HELO");
                     state.greeting_done = true;
                     state.esmtp = false;
                     socket.write_all(messages::HELO_RESPONSE).await?;
                 }
                 Command::Ehlo { fqdn } => {
+                    tracing::trace!("EHLO");
                     state.greeting_done = true;
                     state.esmtp = true;
                     socket.write_all(messages::HELO_RESPONSE).await?;
@@ -115,15 +120,18 @@ async fn process<T: Fn(&str) -> bool>(
 
                 Command::MailFrom { email } => {
                     if !state.greeting_done {
+                        tracing::trace!("MAIL FROM in wrong order");
                         socket.write_all(messages::BAD_COMMAND_SEQUENCE).await?;
                         continue;
                     }
 
                     state.mail_from = Some(email.to_string());
                     socket.write_all(messages::OK).await?;
+                    tracing::trace!("MAIL FROM sent");
                 }
                 Command::RcptTo { email } => {
                     if !state.greeting_done || state.mail_from.is_none() {
+                        tracing::trace!("RCPT TO in wrong order");
                         socket.write_all(messages::BAD_COMMAND_SEQUENCE).await?;
                         continue;
                     }
@@ -131,22 +139,25 @@ async fn process<T: Fn(&str) -> bool>(
                     let email = email.to_string();
                     let email = email.trim();
                     if !is_email_valid(email) {
+                        tracing::trace!("email incoming, but recipient is invalid");
                         socket.write_all(messages::USER_UNKNOWN).await?;
                         continue;
                     }
 
+                    tracing::trace!("added new recipient");
                     state.rcpt_to.push(email.to_string());
                     socket.write_all(messages::OK).await?;
                 }
                 Command::Data => {
                     if !state.greeting_done || state.mail_from.is_none() || state.rcpt_to.is_empty()
                     {
+                        tracing::trace!("DATA sent, but in wrong order");
                         socket.write_all(messages::BAD_COMMAND_SEQUENCE).await?;
                         continue;
                     }
 
                     state.waiting_for_data = true;
-                    tracing::debug!("waiting for data");
+                    tracing::trace!("waiting for data");
                     socket.write_all(messages::DATA_RESPONSE).await?;
                 }
 
