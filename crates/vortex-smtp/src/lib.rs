@@ -70,6 +70,7 @@ async fn process<T: Fn(&str) -> bool>(
         };
 
         let msg = String::from_utf8_lossy(&buf[0..n]);
+        tracing::debug!("received: {:?}", msg);
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
