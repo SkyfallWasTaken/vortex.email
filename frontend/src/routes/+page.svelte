@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Mailbox from '$lib/components/mailbox/Mailbox.svelte';
-	import { Mail as MailIcon } from 'lucide-svelte';
+	import { CopyIcon, CopyCheckIcon } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
 	import { goto } from '$app/navigation';
@@ -14,6 +14,16 @@
 
 	function setUsername(event: KeyboardEvent) {
 		username.set((event.target as HTMLInputElement).value);
+	}
+
+	type CopyButtonState = 'idle' | 'copied';
+	let copyButtonState: CopyButtonState = 'idle';
+	function copyEmail() {
+		navigator.clipboard.writeText(`${$username}@${emailDomain}`);
+		copyButtonState = 'copied';
+		setTimeout(() => {
+			copyButtonState = 'idle';
+		}, 1000);
 	}
 </script>
 
@@ -34,7 +44,13 @@
 		<div class="flex flex-col gap-4">
 			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-				<div class="input-group-shim"><MailIcon size="1.4rem" /></div>
+				<button class="input-group-shim" on:click={copyEmail}>
+					{#if copyButtonState === 'idle'}
+						<CopyIcon size="1.4rem" />
+					{:else}
+						<CopyCheckIcon size="1.4rem" />
+					{/if}
+				</button>
 				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} />
 				<div class="input-group-shim">@{emailDomain}</div>
 			</div>
