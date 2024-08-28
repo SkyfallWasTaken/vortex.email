@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::Path,
-    http::{Method, StatusCode},
+    http::{HeaderValue, Method, StatusCode},
     routing::get,
     Extension, Json, Router,
 };
@@ -62,7 +62,12 @@ async fn main() -> Result<()> {
         let cors = CorsLayer::new()
             .allow_methods([Method::GET])
             // FIXME: this allows requests from any origin
-            .allow_origin(Any);
+            .allow_origin(
+                env::var("FRONTEND_DOMAIN")
+                    .expect("FRONTEND_DOMAIN must be set")
+                    .parse::<HeaderValue>()
+                    .unwrap(),
+            );
 
         let router = Router::new()
             .route(
