@@ -178,6 +178,7 @@ async fn process<T: Fn(&str) -> bool>(
                     socket.write_all(messages::OK).await?;
                 }
                 Command::Quit => {
+                    state.finished = true;
                     socket.write_all(messages::BYE).await?;
                     socket.shutdown().await?;
                     return Ok(state);
