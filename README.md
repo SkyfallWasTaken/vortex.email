@@ -4,6 +4,8 @@ A free, disposable email service from [Skyfall.](https://skyfall.dev)
 
 ![e4494707-0aa6-4c93-aa64-25a0d0c0f7cc-image](https://github.com/SkyfallWasTaken/vortex.email/assets/55807755/96ed167b-5ace-4b25-ae4a-1b4e1053919f)
 
+I built Vortex because I was frustrated with receiving random newsletters and spam in my email, just because some random website forced me to sign up to their newsletter for a discount years ago. Vortex changes that - you get a temporary email address you can give to newsletters and websites, which you can use for those websites that require you to create an account to get what you need _(looking at you, Quora)_
+
 ## Building
 
 You will need:
@@ -82,3 +84,4 @@ And finally, this Caddy reverse proxy command:
 ```bash
 caddy reverse-proxy --from <your api domain> --to :3000
 ```
+<br>
