@@ -51,7 +51,7 @@
 						<CopyCheckIcon size="1.4rem" />
 					{/if}
 				</button>
-				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} />
+				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} value={$username} />
 				<div class="input-group-shim">@{emailDomain}</div>
 			</div>
 		</div>
