@@ -27,7 +27,7 @@
 		}, 1000);
 	}
 
-	const query = createQuery({
+	$: query = createQuery({
 		queryKey: ['emails', username, emailDomain],
 		queryFn: async () => {
 			const response = await ofetch<Email[]>(
