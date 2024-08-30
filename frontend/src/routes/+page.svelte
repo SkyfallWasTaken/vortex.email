@@ -37,7 +37,7 @@
 				);
 				return response;
 			},
-			refetchInterval: 10000,
+			refetchInterval: 10000
 		}))
 	);
 </script>
@@ -91,8 +91,10 @@
 				<Mailbox emails={$query.data} />
 			{/if}
 			<p class="my-4 text-gray-400">
-				Hint: <a href="/" class="text-sky-400 hover:underline" on:click={refreshPage}
-					>refresh the page</a
+				Hint: Wait for 10 seconds or <a
+					href="/"
+					class="text-sky-400 hover:underline"
+					on:click={refreshPage}>refresh the page</a
 				> to see new emails.
 			</p>
 		</div>
