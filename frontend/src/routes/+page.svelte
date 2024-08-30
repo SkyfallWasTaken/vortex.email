@@ -6,6 +6,7 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
 	import type { Email } from '$lib/email';
+	import { derived, writable } from 'svelte/store';
 
 	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
 
@@ -27,15 +28,17 @@
 		}, 1000);
 	}
 
-	$: query = createQuery({
-		queryKey: ['emails', username, emailDomain],
-		queryFn: async () => {
-			const response = await ofetch<Email[]>(
-				`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`
-			);
-			return response;
-		}
-	});
+	const query = createQuery<Email[]>(
+		derived(username, ($username) => ({
+			queryKey: ['emails', $username, emailDomain],
+			queryFn: async () => {
+				const response = await ofetch<Email[]>(
+					`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`
+				);
+				return response;
+			}
+		}))
+	);
 </script>
 
 <svelte:head>
@@ -78,7 +81,7 @@
 				</div>
 			{:else if $query.isError}
 				<div
-					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
+					class="light-bg dark:bg-surface-500 flex flex-col items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
 					<p>Sorry about that! Please refresh the page and try again.</p>
