@@ -18,7 +18,7 @@
 				{/each}
 			</Accordion>
 		{:else}
-			<p class="text-lg font-semibold">No emails... yet</p>
+			<h2 class="text-lg font-semibold">No emails... yet</h2>
 			<p>You're all caught up! Go out and do what you do best.</p>
 		{/if}
 	</div>

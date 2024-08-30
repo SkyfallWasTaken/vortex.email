@@ -3,13 +3,14 @@
 	import { CopyIcon, CopyCheckIcon } from 'lucide-svelte';
 	import { username } from '$lib/stores/mailbox';
 	import { ofetch } from 'ofetch';
-	import { goto } from '$app/navigation';
+	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
+	import type { Email } from '$lib/email';
 
 	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
 
 	function refreshPage() {
-		goto(window.location.href);
+		window.location.reload();
 	}
 
 	function setUsername(event: KeyboardEvent) {
@@ -25,6 +26,16 @@
 			copyButtonState = 'idle';
 		}, 1000);
 	}
+
+	const query = createQuery({
+		queryKey: ['emails', username, emailDomain],
+		queryFn: async () => {
+			const response = await ofetch<Email[]>(
+				`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`
+			);
+			return response;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -59,15 +70,22 @@
 		<hr />
 
 		<div>
-			{#await ofetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`)}
+			{#if $query.isLoading}
 				<div
 					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
-			{:then emails}
-				<Mailbox {emails} />
-			{/await}
+			{:else if $query.isError}
+				<div
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
+				>
+					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
+					<p>Sorry about that! Please refresh the page and try again.</p>
+				</div>
+			{:else if $query.isSuccess}
+				<Mailbox emails={$query.data} />
+			{/if}
 			<p class="my-4 text-gray-400">
 				Hint: <a href="/" class="text-sky-400 hover:underline" on:click={refreshPage}
 					>refresh the page</a
