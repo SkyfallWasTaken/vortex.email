@@ -36,7 +36,8 @@
 					`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`
 				);
 				return response;
-			}
+			},
+			refetchInterval: 10000,
 		}))
 	);
 </script>
