@@ -6,7 +6,7 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
 	import type { Email } from '$lib/email';
-	import { derived, writable } from 'svelte/store';
+	import { derived } from 'svelte/store';
 
 	const emailDomain = import.meta.env.VITE_EMAIL_DOMAIN as string;
 
