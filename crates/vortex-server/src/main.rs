@@ -22,6 +22,7 @@ const SMTP_ADDR: &str = "0.0.0.0:25";
 
 type EmailsMap = DashMap<String, Vec<Email>>;
 
+#[tracing::instrument]
 async fn server_main() -> Result<()> {
     let emails_map: Arc<EmailsMap> = Arc::new(DashMap::new());
     let emails_map_validator = emails_map.clone();
@@ -92,6 +93,7 @@ async fn server_main() -> Result<()> {
     Ok(())
 }
 
+#[tracing::instrument]
 async fn get_emails(
     Path(email): Path<String>,
     Extension(emails_map): Extension<Arc<EmailsMap>>,
