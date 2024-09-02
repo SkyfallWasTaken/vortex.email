@@ -7,7 +7,7 @@ Vortex is a solution to the common problem of email inbox clutter. It provides t
 ## Why Vortex?
 - Generate disposable email addresses
 - Protect your primary email from spam and unwanted newsletters
-- Ideal for one-time signups and temporary accounts _(looking at you, Quora)
+- Ideal for one-time signups and temporary accounts _(looking at you, Quora)_
 
 ## Building
 
