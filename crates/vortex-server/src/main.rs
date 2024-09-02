@@ -21,11 +21,7 @@ const SMTP_ADDR: &str = "0.0.0.0:25";
 
 type EmailsMap = DashMap<String, Vec<Email>>;
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
-    tracing_subscriber::fmt::init();
-
+async fn server_main() -> Result<()> {
     let emails_map: Arc<EmailsMap> = Arc::new(DashMap::new());
     let emails_map_validator = emails_map.clone();
     let emails_map_smtp = emails_map.clone();
@@ -122,4 +118,25 @@ fn validate_vortex_email(email: &str, email_domain: String) -> bool {
         return false;
     };
     parsed.get_domain() == email_domain
+}
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    tracing_subscriber::fmt::init();
+
+    let sentry_dsn = env::var("SENTRY_DSN")?;
+    let _guard = sentry::init((
+        sentry_dsn,
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        },
+    ));
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(server_main())?;
+
+    Ok(())
 }
