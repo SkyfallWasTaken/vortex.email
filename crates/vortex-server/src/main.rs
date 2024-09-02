@@ -12,7 +12,8 @@ use dashmap::DashMap;
 use email_address_parser::EmailAddress;
 use futures_util::TryFutureExt;
 use tokio::net::TcpListener;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
+use tracing_subscriber::prelude::*;
 
 use vortex_smtp::{event::Event, Email};
 
@@ -122,7 +123,9 @@ fn validate_vortex_email(email: &str, email_domain: String) -> bool {
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::Registry::default()
+        .with(sentry::integrations::tracing::layer())
+        .init();
 
     let sentry_dsn = env::var("SENTRY_DSN")?;
     let _guard = sentry::init((
