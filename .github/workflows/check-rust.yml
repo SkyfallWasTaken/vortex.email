@@ -45,7 +45,7 @@ jobs:
 
       - name: Run server and smtp-fuzz.pl in parallel
         run: |
-          sudo VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} VITE_EMAIL_DOMAIN=localhost target/debug/vortex-server &
+          sudo VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} VITE_EMAIL_DOMAIN=localhost FRONTEND_DOMAIN=localhost target/debug/vortex-server &
           SERVER_PID=$!
           echo "Server running in background with PID $SERVER_PID"
 
