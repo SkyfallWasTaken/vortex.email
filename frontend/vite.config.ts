@@ -15,7 +15,7 @@ export default defineConfig({
 	envDir: '../',
 	build: {
 		rollupOptions: {
-			external: ['@macfja/svelte-persistent-store', '@faker-js/faker', '@sveltejs/kit']
+			external: ['@faker-js/faker']
 		}
 	}
 });
