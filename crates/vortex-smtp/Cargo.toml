@@ -10,3 +10,6 @@ tracing = "0.1.40"
 serde = { version = "1.0.203", features = ["derive"] }
 thiserror = "1.0.61"
 nanoid = "0.4.0"
+
+[lints]
+workspace = true
