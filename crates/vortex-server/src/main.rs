@@ -102,13 +102,12 @@ async fn get_emails(
     let emails_map = emails_map.as_ref();
 
     if validate_vortex_email(&email, &email_domain) {
-        match emails_map.get(&email) {
-            Some(emails) => (StatusCode::OK, Json(emails.clone())),
-            None => {
-                tracing::info!(email, "mailbox not found, adding to map");
-                emails_map.insert(email.clone(), Vec::new());
-                (StatusCode::CREATED, Json(Vec::new()))
-            }
+        if let Some(emails) = emails_map.get(&email) {
+            (StatusCode::OK, Json(emails.clone()))
+        } else {
+            tracing::info!(email, "mailbox not found, adding to map");
+            emails_map.insert(email.clone(), Vec::new());
+            (StatusCode::CREATED, Json(Vec::new()))
         }
     } else {
         (StatusCode::BAD_REQUEST, Json(Vec::new())) // TODO: returning a new Vec here is wrong.

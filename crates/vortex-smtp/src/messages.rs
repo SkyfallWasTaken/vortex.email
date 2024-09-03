@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(
             Command::from_smtp_message("MAIL FROM:<test@skyfall.com>"),
             Some(Command::MailFrom {
-                email: "test@skyfall.com".into()
+                email: "test@skyfall.com"
             })
         );
         assert_eq!(Command::from_smtp_message("MAIL FROM:<"), None);
@@ -132,7 +132,7 @@ mod tests {
         assert_eq!(
             Command::from_smtp_message("RCPT TO:<test@skyfall.com>"),
             Some(Command::RcptTo {
-                email: "test@skyfall.com".into()
+                email: "test@skyfall.com"
             })
         );
         assert_eq!(Command::from_smtp_message("RCPT TO:<"), None);
@@ -148,13 +148,13 @@ mod tests {
         assert_eq!(
             Command::from_smtp_message("MAIL FROM:<Test@test.com>"),
             Some(Command::MailFrom {
-                email: "Test@test.com".into()
+                email: "Test@test.com"
             })
         );
         assert_eq!(
             Command::from_smtp_message("RCPT TO:<Test@test.com>"),
             Some(Command::RcptTo {
-                email: "Test@test.com".into()
+                email: "Test@test.com"
             })
         );
         assert_eq!(
