@@ -134,6 +134,7 @@ fn main() -> Result<()> {
         sentry_dsn,
         sentry::ClientOptions {
             release: sentry::release_name!(),
+            traces_sample_rate: 0.3,
             ..Default::default()
         },
     ));
