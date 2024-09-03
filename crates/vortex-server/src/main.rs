@@ -36,7 +36,7 @@ async fn server_main() -> Result<()> {
         SMTP_ADDR,
         move |email| {
             tracing::debug!(email, "validating email");
-            validate_vortex_email(email, email_domain_smtp.to_string())
+            validate_vortex_email(email, &email_domain_smtp)
                 && emails_map_validator.contains_key(email)
         },
         move |event| match &event {
@@ -101,7 +101,7 @@ async fn get_emails(
 ) -> (StatusCode, Json<Vec<Email>>) {
     let emails_map = emails_map.as_ref();
 
-    if validate_vortex_email(&email, email_domain) {
+    if validate_vortex_email(&email, &email_domain) {
         match emails_map.get(&email) {
             Some(emails) => (StatusCode::OK, Json(emails.clone())),
             None => {
@@ -115,7 +115,7 @@ async fn get_emails(
     }
 }
 
-fn validate_vortex_email(email: &str, email_domain: String) -> bool {
+fn validate_vortex_email(email: &str, email_domain: &str) -> bool {
     // The `None` here means that we use strict email parsing.
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
