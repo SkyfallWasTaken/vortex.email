@@ -1,10 +1,11 @@
 # Vortex
 
-Vortex is a solution to the common problem of email inbox clutter. It provides temporary email addresses for signing up to newsletters, websites, and services that require an email, without compromising your primary email address. A hosted instance is available at https://vortex.skyfall.dev!
+Vortex is a solution to the common problem of email inbox clutter. It provides temporary email addresses for signing up to newsletters, websites, and services that require an email, without compromising your primary email address. A hosted instance is available at <https://vortex.skyfall.dev>!
 
 ![e4494707-0aa6-4c93-aa64-25a0d0c0f7cc-image](https://github.com/SkyfallWasTaken/vortex.email/assets/55807755/96ed167b-5ace-4b25-ae4a-1b4e1053919f)
 
 ## Why Vortex?
+
 - Generate disposable email addresses
 - Protect your primary email from spam and unwanted newsletters
 - Ideal for one-time signups and temporary accounts _(looking at you, Quora)_
@@ -66,7 +67,7 @@ bun dev
 
 #### Frontend
 
-Run it anywhere, e.g. Vercel. Ensure environment variables are set.
+Run it anywhere, e.g. Cloudflare Pages. Ensure environment variables are set.
 
 #### Backend
 
@@ -87,4 +88,5 @@ And finally, this Caddy reverse proxy command:
 ```bash
 caddy reverse-proxy --from <your api domain> --to :3000
 ```
+
 <br>
