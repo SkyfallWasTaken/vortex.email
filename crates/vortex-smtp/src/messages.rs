@@ -5,7 +5,6 @@ pub const GREETING: &[u8] = formatcp!(
     env!("CARGO_PKG_VERSION")
 )
 .as_bytes();
-pub const HELO_RESPONSE: &[u8] = b"250-smtp2.example.org ready when you are, [$hostname]\n";
 pub const BAD_COMMAND_SEQUENCE: &[u8] = b"503 Bad sequence of commands\n";
 pub const OK: &[u8] = b"250 OK\n";
 pub const DATA_RESPONSE: &[u8] = b"354 End data with <CR><LF>.<CR><LF>\n";
@@ -14,6 +13,10 @@ pub const HELP_RESPONSE: &[u8] =
 pub const UNRECOGNIZED_COMMAND: &[u8] = b"500 Unrecognized command\n";
 pub const USER_UNKNOWN: &[u8] = b"550 User unknown\n";
 pub const BYE: &[u8] = b"221 Bye\n";
+
+pub fn helo_response(hostname: &str) -> String {
+    format!("250-smtp2.example.org ready when you are, {hostname}\n")
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command<'a> {
@@ -32,7 +35,7 @@ pub enum Command<'a> {
 
 impl<'a> Command<'a> {
     #[tracing::instrument]
-    pub fn from_smtp_message(msg: &'a str) -> Option<Command<'a>> {
+    pub fn from_smtp_message(msg: &'a str) -> Option<Self> {
         let msg: Vec<&str> = msg.split_whitespace().collect();
         let cmd = msg.first()?.to_uppercase();
         let cmd = cmd.as_str();

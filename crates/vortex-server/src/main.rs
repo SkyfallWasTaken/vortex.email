@@ -36,7 +36,7 @@ async fn server_main() -> Result<()> {
         SMTP_ADDR,
         move |email| {
             tracing::debug!(email, "validating email");
-            validate_vortex_email(&email, email_domain_smtp.to_string())
+            validate_vortex_email(email, email_domain_smtp.to_string())
                 && emails_map_validator.contains_key(email)
         },
         move |event| match &event {

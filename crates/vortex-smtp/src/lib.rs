@@ -40,7 +40,7 @@ pub struct State {
     data: Option<Vec<u8>>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
-async fn process<T: Fn(&str) -> bool>(
+async fn process<T: Send + Fn(&str) -> bool>(
     mut socket: TcpStream,
     is_email_valid: T,
 ) -> Result<State, Error> {
@@ -94,7 +94,7 @@ async fn process<T: Fn(&str) -> bool>(
                     .extend_from_slice(&buf[0..n]);
             }
         } else {
-            let Some(command) = Command::from_smtp_message(&msg.trim()) else {
+            let Some(command) = Command::from_smtp_message(msg.trim()) else {
                 tracing::trace!("command unrecognised");
                 socket.write_all(messages::UNRECOGNIZED_COMMAND).await?;
                 continue;
@@ -104,7 +104,9 @@ async fn process<T: Fn(&str) -> bool>(
                     tracing::trace!("HELO");
                     state.greeting_done = true;
                     state.esmtp = false;
-                    socket.write_all(messages::HELO_RESPONSE).await?;
+                    socket
+                        .write_all(messages::helo_response(fqdn).as_bytes())
+                        .await?;
                 }
                 Command::Ehlo { fqdn } => {
                     tracing::trace!("EHLO");
@@ -112,7 +114,7 @@ async fn process<T: Fn(&str) -> bool>(
                     state.esmtp = true;
 
                     let mut response = Vec::new();
-                    response.extend_from_slice(messages::HELO_RESPONSE);
+                    response.extend_from_slice(messages::helo_response(fqdn).as_bytes());
 
                     for ext in esmtp::SUPPORTED_EXTENSIONS {
                         response.extend_from_slice(format!("250-{ext}\r\n").as_bytes());
@@ -201,7 +203,7 @@ pub struct Email {
 
 pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
 where
-    A: ToSocketAddrs + Display + Copy,
+    A: ToSocketAddrs + Display + Copy + Send,
     F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
     G: Fn(Event) + Send + Sync + Clone + 'static,        // Added Clone here
 {
