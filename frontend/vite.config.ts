@@ -12,10 +12,5 @@ export default defineConfig({
 		}),
 		sveltekit()
 	],
-	envDir: '../',
-	build: {
-		rollupOptions: {
-			external: ['@faker-js/faker']
-		}
-	}
+	envDir: '../'
 });
