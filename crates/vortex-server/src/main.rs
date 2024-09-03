@@ -129,7 +129,8 @@ fn main() -> Result<()> {
         .with(sentry::integrations::tracing::layer())
         .init();
 
-    let sentry_dsn = env::var("SENTRY_DSN")?;
+    let sentry_dsn =
+        env::var("VITE_SENTRY_DSN").wrap_err("failed to read env var VITE_SENTRY_DSN")?;
     let _guard = sentry::init((
         sentry_dsn,
         sentry::ClientOptions {
