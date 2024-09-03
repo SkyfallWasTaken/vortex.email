@@ -1,13 +1,13 @@
 /target
 
 # Frontend
-
 node_modules
 frontend/node_modules
 frontend/.output
 frontend/.vercel
 frontend/.svelte-kit
 frontend/build
+frontend/.sentryclirc
 
 # OS
 .DS_Store
