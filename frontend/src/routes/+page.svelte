@@ -2,15 +2,12 @@
 	import Mailbox from '$lib/components/mailbox/Mailbox.svelte';
 	import CopyIcon from 'lucide-svelte/icons/copy';
 	import CopyCheckIcon from 'lucide-svelte/icons/copy-check';
-	import { username } from '$lib/stores/mailbox';
+	import { username, emailDomain as emailDomainStore, emailDomains } from '$lib/mailbox';
 	import { ofetch } from 'ofetch';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
 	import type { Email } from '$lib/email';
 	import { derived } from 'svelte/store';
-
-	const emailDomains = (import.meta.env.VITE_EMAIL_DOMAINS as string).split(',');
-	const emailDomain = emailDomains[Math.floor(Math.random() * emailDomains.length)];
 
 	function refreshPage() {
 		window.location.reload();
@@ -23,7 +20,7 @@
 	type CopyButtonState = 'idle' | 'copied';
 	let copyButtonState: CopyButtonState = 'idle';
 	function copyEmail() {
-		navigator.clipboard.writeText(`${$username}@${emailDomain}`);
+		navigator.clipboard.writeText(`${$username}@${$emailDomainStore}`);
 		copyButtonState = 'copied';
 		setTimeout(() => {
 			copyButtonState = 'idle';
@@ -31,7 +28,7 @@
 	}
 
 	const query = createQuery<Email[]>(
-		derived(username!, ($username) => ({
+		derived([username, emailDomainStore], ([$username, emailDomain]) => ({
 			queryKey: ['emails', $username, emailDomain],
 			queryFn: async () => {
 				const response = await ofetch<Email[]>(
@@ -69,7 +66,11 @@
 					{/if}
 				</button>
 				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} value={$username} />
-				<div class="input-group-shim">@{emailDomain}</div>
+				<select bind:value={$emailDomainStore} >
+					{#each emailDomains as domain}
+						<option value={domain}>@{domain}</option>
+					{/each}
+				</select>
 			</div>
 		</div>
 
@@ -78,13 +79,13 @@
 		<div>
 			{#if $query.isLoading}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
 			{:else if $query.isError}
 				<div
-					class="light-bg flex flex-col items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex flex-col items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
 					<p>Sorry about that! Please refresh the page and try again.</p>
