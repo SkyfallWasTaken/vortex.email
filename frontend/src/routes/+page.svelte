@@ -66,7 +66,7 @@
 					{/if}
 				</button>
 				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} value={$username} />
-				<select bind:value={$emailDomainStore} >
+				<select bind:value={$emailDomainStore}>
 					{#each emailDomains as domain}
 						<option value={domain}>@{domain}</option>
 					{/each}
@@ -79,13 +79,13 @@
 		<div>
 			{#if $query.isLoading}
 				<div
-					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
+					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
 			{:else if $query.isError}
 				<div
-					class="light-bg dark:bg-surface-500 flex flex-col items-center justify-center rounded-md p-6 shadow-sm"
+					class="light-bg flex flex-col items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
 				>
 					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
 					<p>Sorry about that! Please refresh the page and try again.</p>
