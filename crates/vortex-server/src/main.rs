@@ -27,16 +27,17 @@ async fn server_main() -> Result<()> {
     let emails_map: Arc<EmailsMap> = Arc::new(DashMap::new());
     let emails_map_validator = emails_map.clone();
     let emails_map_smtp = emails_map.clone();
-    let email_domain =
-        Arc::new(env::var("VITE_EMAIL_DOMAIN").wrap_err("VITE_EMAIL_DOMAIN must be set")?);
-    let email_domain_smtp = email_domain.clone();
-    let email_domain_http = email_domain.clone();
+    let email_domains =
+        env::var("VITE_EMAIL_DOMAINS").wrap_err("VITE_EMAIL_DOMAINS must be set")?;
+    let email_domains: Arc<Vec<String>> =
+        Arc::new(email_domains.split(',').map(String::from).collect());
 
+    let email_domains_smtp = email_domains.clone();
     let smtp_server = vortex_smtp::listen(
         SMTP_ADDR,
         move |email| {
             tracing::debug!(email, "validating email");
-            validate_vortex_email(email, &email_domain_smtp)
+            validate_vortex_email(email, &email_domains_smtp)
                 && emails_map_validator.contains_key(email)
         },
         move |event| match &event {
@@ -57,15 +58,12 @@ async fn server_main() -> Result<()> {
     );
 
     let http_server = tokio::spawn(async move {
-        let cors = CorsLayer::new()
-            .allow_methods([Method::GET])
-            // FIXME: this allows requests from any origin
-            .allow_origin(
-                env::var("FRONTEND_DOMAIN")
-                    .expect("FRONTEND_DOMAIN must be set")
-                    .parse::<HeaderValue>()
-                    .unwrap(),
-            );
+        let cors = CorsLayer::new().allow_methods([Method::GET]).allow_origin(
+            env::var("FRONTEND_DOMAIN")
+                .expect("FRONTEND_DOMAIN must be set")
+                .parse::<HeaderValue>()
+                .unwrap(),
+        );
 
         let router = Router::new()
             .route(
@@ -74,7 +72,7 @@ async fn server_main() -> Result<()> {
             )
             .route("/emails/:email", get(get_emails))
             .layer(Extension(emails_map_smtp))
-            .layer(Extension(email_domain_http.to_string()))
+            .layer(Extension(email_domains))
             .layer(cors);
         let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
 
@@ -97,11 +95,11 @@ async fn server_main() -> Result<()> {
 async fn get_emails(
     Path(email): Path<String>,
     Extension(emails_map): Extension<Arc<EmailsMap>>,
-    Extension(email_domain): Extension<String>,
+    Extension(email_domains): Extension<Arc<Vec<String>>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
     let emails_map = emails_map.as_ref();
 
-    if validate_vortex_email(&email, &email_domain) {
+    if validate_vortex_email(&email, &email_domains) {
         if let Some(emails) = emails_map.get(&email) {
             (StatusCode::OK, Json(emails.clone()))
         } else {
@@ -110,16 +108,17 @@ async fn get_emails(
             (StatusCode::CREATED, Json(Vec::new()))
         }
     } else {
-        (StatusCode::BAD_REQUEST, Json(Vec::new())) // TODO: returning a new Vec here is wrong.
+        (StatusCode::BAD_REQUEST, Json(Vec::new()))
     }
 }
 
-fn validate_vortex_email(email: &str, email_domain: &str) -> bool {
-    // The `None` here means that we use strict email parsing.
+fn validate_vortex_email(email: &str, email_domains: &Vec<String>) -> bool {
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
-    parsed.get_domain() == email_domain
+    email_domains
+        .iter()
+        .any(|domain| parsed.domain() == *domain)
 }
 
 fn main() -> Result<()> {

@@ -1,5 +1,8 @@
 FROM rust:1-bookworm as builder
 
+EXPOSE 25
+EXPOSE 3000
+
 WORKDIR /usr/src/app
 COPY . .
 # Will build and cache the binary and dependent crates in release mode
