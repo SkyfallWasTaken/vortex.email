@@ -58,7 +58,13 @@
 		<div class="flex flex-col gap-4">
 			<p class="text-xl font-semibold">You are...</p>
 			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-				<button class="input-group-shim" on:click={copyEmail}>
+				<button
+					class="input-group-shim"
+					on:click={copyEmail}
+					aria-label={copyButtonState === 'idle'
+						? 'Copy email to clipboard'
+						: 'Copied email to clipboard!'}
+				>
 					{#if copyButtonState === 'idle'}
 						<CopyIcon size="1.4rem" />
 					{:else}
@@ -66,7 +72,7 @@
 					{/if}
 				</button>
 				<input type="text" placeholder="shark" on:keyup={debounce(setUsername)} value={$username} />
-				<select bind:value={$emailDomainStore}>
+				<select bind:value={$emailDomainStore} aria-label="Select email domain">
 					{#each emailDomains as domain}
 						<option value={domain}>@{domain}</option>
 					{/each}
@@ -96,7 +102,7 @@
 			<p class="my-4 text-gray-400">
 				Hint: Wait for 10 seconds or <a
 					href="/"
-					class="text-sky-400 hover:underline"
+					class="text-sky-400 underline"
 					on:click={refreshPage}>refresh the page</a
 				> to see new emails.
 			</p>
