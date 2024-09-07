@@ -112,7 +112,7 @@ async fn get_emails(
     }
 }
 
-fn validate_vortex_email(email: &str, email_domains: &Vec<String>) -> bool {
+fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
