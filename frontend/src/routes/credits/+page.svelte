@@ -27,8 +27,8 @@
 			<b>vortex.mattsoh.dev</b> subdomain
 		</li>
 		<li>
-			<a href="https://us.kg/" target="_blank" class="underline">us.kg</a> for the
-			<b>postal.us.kg, postoffice.us.kg, and vortex.us.kg</b> subdomains
+			<a href="https://nic.us.kg/" target="_blank" class="underline">us.kg</a> for the
+			<b>postal.us.kg, postoffice.us.kg, and vortex.us.kg</b> domains
 		</li>
 	</ul>
 	<hr class="my-4" />
