@@ -26,6 +26,10 @@
 			<a href="https://mattsoh.dev/" target="_blank" class="underline">Matthew Soh</a> for the
 			<b>vortex.mattsoh.dev</b> subdomain
 		</li>
+		<li>
+			<a href="https://us.kg/" target="_blank" class="underline">us.kg</a> for the
+			<b>postal.us.kg, postoffice.us.kg, and vortex.us.kg</b> subdomains
+		</li>
 	</ul>
 	<hr class="my-4" />
 	<a href="/" class="btn border-gray-300 p-1">
