@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ArrowRightIcon from 'lucide-svelte/icons/arrow-right';
+	import ArrowLeftIcon from 'lucide-svelte/icons/arrow-left';
 </script>
 
 <svelte:head>
@@ -33,7 +33,7 @@
 	</ul>
 	<hr class="my-4" />
 	<a href="/" class="btn border-gray-300 p-1">
-		<ArrowRightIcon size="1.2rem" class="mr-2" />
+		<ArrowLeftIcon size="1.2rem" class="mr-2" />
 		<p>Go back home...</p>
 	</a>
 </div>
