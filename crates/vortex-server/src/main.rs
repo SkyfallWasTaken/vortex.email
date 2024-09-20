@@ -125,6 +125,7 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     tracing_subscriber::Registry::default()
         .with(sentry::integrations::tracing::layer())
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let sentry_dsn =
