@@ -25,14 +25,16 @@
 		<svelte:fragment slot="summary">
 			<div class="flex gap-4">
 				<p class="{!email.read ? 'font-semibold' : ''} truncate">
-					{parsedEmail.from.name || email.mail_from || 'No sender'}
+					{parsedEmail.from?.name || email.mail_from || 'No sender'}
 				</p>
 				<p class="{!email.read ? 'font-semibold' : ''} truncate">
 					{parsedEmail.subject || 'No subject'}
 				</p>
-				<p class="hidden truncate sm:block">
-					{parsedEmail.text?.substring(0, 100) ||
-						parsedEmail.html?.substring(0, 100) ||
+				<p
+					class="max-w-xs overflow-hidden truncate text-ellipsis whitespace-nowrap sm:block sm:max-w-sm md:max-w-md lg:max-w-xl"
+				>
+					{parsedEmail.text?.substring(0, 130) ||
+						parsedEmail.html?.substring(0, 130) ||
 						'No content'}
 				</p>
 			</div>
