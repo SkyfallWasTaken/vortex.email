@@ -126,6 +126,7 @@ fn main() -> Result<()> {
     tracing_subscriber::Registry::default()
         .with(sentry::integrations::tracing::layer())
         .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let sentry_dsn =
