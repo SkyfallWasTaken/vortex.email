@@ -24,15 +24,15 @@
 	<AccordionItem>
 		<svelte:fragment slot="summary">
 			<div class="flex gap-4">
-				<p class="{!email.read ? 'font-semibold' : ''} truncate">
+				<p
+					class={`${!email.read ? 'font-semibold' : ''} max-w-xs truncate sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl`}
+				>
 					{parsedEmail.from?.name || email.mail_from || 'No sender'}
 				</p>
-				<p class="{!email.read ? 'font-semibold' : ''} truncate">
+				<p class={`${!email.read ? 'font-semibold' : ''} max-w-xs truncate sm:max-w-sm`}>
 					{parsedEmail.subject || 'No subject'}
 				</p>
-				<p
-					class="max-w-xs overflow-hidden truncate text-ellipsis whitespace-nowrap sm:block sm:max-w-sm md:max-w-md lg:max-w-xl"
-				>
+				<p class="max-w-xs truncate sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
 					{parsedEmail.text?.substring(0, 130) ||
 						parsedEmail.html?.substring(0, 130) ||
 						'No content'}
@@ -58,3 +58,11 @@
 		</svelte:fragment>
 	</AccordionItem>
 {/if}
+
+<style>
+	.accordion-summary {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+</style>
