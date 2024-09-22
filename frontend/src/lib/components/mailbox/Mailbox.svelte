@@ -6,10 +6,10 @@
 </script>
 
 <div class="flex w-screen justify-center">
-	<div class="light-bg w-5/6 rounded-md p-4 shadow-sm sm:w-4/5 dark:bg-surface-500">
+	<div class="light-bg dark:bg-surface-500 w-5/6 rounded-md p-4 shadow-sm sm:w-4/5">
 		{#if emails.length != 0}
 			<Accordion>
-				{#each emails.reverse() as email}
+				{#each emails as email}
 					<div
 						class="border-b border-gray-400 pb-2 last:border-b-0 last:pb-0 dark:border-slate-700"
 					>

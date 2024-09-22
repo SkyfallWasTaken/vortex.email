@@ -37,6 +37,7 @@
 					throw new Error('Failed to fetch emails');
 				}
 				const json: Email[] = await response.json();
+				console.log(json);
 				return json;
 			},
 			refetchInterval: 10000
