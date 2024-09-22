@@ -3,7 +3,6 @@
 	import CopyIcon from 'lucide-svelte/icons/copy';
 	import CopyCheckIcon from 'lucide-svelte/icons/copy-check';
 	import { username, emailDomain as emailDomainStore, emailDomains } from '$lib/mailbox';
-	import { ofetch } from 'ofetch';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
 	import type { Email } from '$lib/email';
@@ -31,10 +30,14 @@
 		derived([username, emailDomainStore], ([$username, emailDomain]) => ({
 			queryKey: ['emails', $username, emailDomain],
 			queryFn: async () => {
-				const response = await ofetch<Email[]>(
+				const response = await fetch(
 					`${import.meta.env.VITE_API_ENDPOINT}/emails/${$username}@${emailDomain}`
 				);
-				return response;
+				if (!response.ok) {
+					throw new Error('Failed to fetch emails');
+				}
+				const json: Email[] = await response.json();
+				return json;
 			},
 			refetchInterval: 10000
 		}))
@@ -85,13 +88,13 @@
 		<div>
 			{#if $query.isLoading}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
 			{:else if $query.isError}
 				<div
-					class="light-bg flex flex-col items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex flex-col items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
 					<p>Sorry about that! Please refresh the page and try again.</p>
