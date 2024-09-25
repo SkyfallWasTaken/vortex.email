@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Email } from '$lib/email';
-	import { AccordionItem } from '@skeletonlabs/skeleton';
-	import PostalMime from 'postal-mime';
 	import { type Email as PostalEmail } from 'postal-mime';
+	import { AccordionItem } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
+	import PostalMime from 'postal-mime';
 
 	export let email: Email;
 

@@ -1,11 +1,11 @@
 <script lang="ts">
+	import type { Email } from '$lib/email';
 	import Mailbox from '$lib/components/mailbox/Mailbox.svelte';
 	import CopyIcon from 'lucide-svelte/icons/copy';
 	import CopyCheckIcon from 'lucide-svelte/icons/copy-check';
 	import { username, emailDomain as emailDomainStore, emailDomains } from '$lib/mailbox';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { debounce } from '$lib/util';
-	import type { Email } from '$lib/email';
 	import { derived } from 'svelte/store';
 
 	function refreshPage() {
@@ -37,7 +37,6 @@
 					throw new Error('Failed to fetch emails');
 				}
 				const json: Email[] = await response.json();
-				console.log(json);
 				return json;
 			},
 			refetchInterval: 10000
