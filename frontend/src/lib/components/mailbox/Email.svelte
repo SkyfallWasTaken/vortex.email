@@ -15,6 +15,19 @@
 	});
 
 	$: if (iframe && parsedEmail) {
+		iframe.addEventListener('load', function() {
+			const iframeDocument = this.contentDocument || this.contentWindow?.document;
+			if (iframeDocument) {
+				iframeDocument.addEventListener('click', (event: MouseEvent) => {
+					const target = event.target as HTMLAnchorElement;
+
+					if (target.tagName === 'A' && target.href) {
+						event.preventDefault();
+						window.open(target.href, '_blank');
+					}
+				});
+			}
+		});
 		const blob = new Blob([parsedEmail.html || parsedEmail.text || ''], { type: 'text/html' });
 		iframe.src = window.URL.createObjectURL(blob);
 	}
