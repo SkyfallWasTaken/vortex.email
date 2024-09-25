@@ -15,7 +15,7 @@
 	});
 
 	$: if (iframe && parsedEmail) {
-		iframe.addEventListener('load', function() {
+		iframe.addEventListener('load', function () {
 			const iframeDocument = this.contentDocument || this.contentWindow?.document;
 			if (iframeDocument) {
 				iframeDocument.addEventListener('click', (event: MouseEvent) => {
