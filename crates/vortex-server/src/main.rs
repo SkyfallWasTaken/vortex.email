@@ -123,9 +123,16 @@ fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+
+    let log_dir = env::var("LOG_DIR").wrap_err("failed to read env var LOG_DIR")?;
     tracing_subscriber::Registry::default()
         .with(sentry::integrations::tracing::layer())
-        .with(tracing_subscriber::fmt::layer())
+        .with(
+            tracing_subscriber::fmt::layer().with_writer(tracing_appender::rolling::daily(
+                log_dir,
+                "vortex-server.log",
+            )),
+        )
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
