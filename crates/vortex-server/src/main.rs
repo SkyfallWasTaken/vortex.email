@@ -10,7 +10,6 @@ use axum::{
 use color_eyre::{eyre::Context, Report, Result};
 use dashmap::DashMap;
 use email_address_parser::EmailAddress;
-use futures_util::TryFutureExt;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::prelude::*;
@@ -80,12 +79,11 @@ async fn server_main() -> Result<()> {
         axum::serve(listener, router).await
     });
 
-    tracing::debug!("starting servers");
-    let (http_result, _) = tokio::try_join!(
-        http_server.map_err(Report::from),
-        smtp_server.map_err(Report::from)
-    )?;
-    http_result?;
+    let http_handle = tokio::spawn(async { http_server.await.map_err(Report::from) });
+    let smtp_handle = tokio::spawn(async { smtp_server.await.map_err(Report::from) });
+    let (http_result, smtp_result) = tokio::try_join!(http_handle, smtp_handle)?;
+    http_result??;
+    smtp_result?;
     tracing::debug!("exiting.");
 
     Ok(())
