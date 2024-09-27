@@ -30,6 +30,31 @@
 			<a href="https://nic.us.kg/" target="_blank" class="underline">us.kg</a> for the
 			<b>postal.us.kg, postoffice.us.kg, and vortex.us.kg</b> domains
 		</li>
+		<li>
+			<a href="https://ssmidge.xyz/" target="_blank" class="underline">Adrian T</a> for the
+			<b>lunarhoax.com</b> domain <i>(side note: the domain isn't about the moon landing 😅)</i>
+		</li>
+		<li>
+			<a href="https://jer.app/" target="_blank" class="underline">Jeremy Woolley</a> for the
+			<b>comet.jer.app and cosmos.jer.app</b> subdomains
+		</li>
+		<li>
+			<a href="https://matytyma.dev/" target="_blank" class="underline">matytyma</a> for the
+			<b>vortex.matytyma.dev</b> subdomain
+		</li>
+		<li>
+			<a href="https://matytyma.dev/" target="_blank" class="underline">The BBSS Hack Club</a> for
+			the
+			<b>shuttle.bbsshack.club</b> subdomain
+		</li>
+		<li>
+			<a href="https://userexe.me/" target="_blank" class="underline">Dominic</a> for the
+			<b>gambling.baby</b> domain
+		</li>
+		<li>
+			<a href="https://whatisham.eu.org/" target="_blank" class="underline">Lucas</a> for the
+			<b>whatisham.eu.org</b> subdomain
+		</li>
 	</ul>
 	<hr class="my-4" />
 	<a href="/" class="btn border-gray-300 p-1">

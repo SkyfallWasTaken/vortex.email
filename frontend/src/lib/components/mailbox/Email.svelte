@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Email } from '$lib/email';
-	import { AccordionItem } from '@skeletonlabs/skeleton';
-	import PostalMime from 'postal-mime';
 	import { type Email as PostalEmail } from 'postal-mime';
+	import { AccordionItem } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
+	import PostalMime from 'postal-mime';
 
 	export let email: Email;
 
@@ -15,7 +15,27 @@
 	});
 
 	$: if (iframe && parsedEmail) {
-		const blob = new Blob([parsedEmail.html || parsedEmail.text || ''], { type: 'text/html' });
+		iframe.addEventListener('load', function () {
+			const iframeDocument = this.contentDocument || this.contentWindow?.document;
+			if (iframeDocument) {
+				iframeDocument.addEventListener('click', (event: MouseEvent) => {
+					const target = event.target as HTMLAnchorElement;
+
+					if (target.tagName === 'A' && target.href) {
+						event.preventDefault();
+						window.open(target.href, '_blank');
+					}
+				});
+			}
+		});
+		const styling = `
+			<style>
+				body {
+					font-family: Arial, Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+				}
+			</style>
+		`
+		const blob = new Blob([styling, parsedEmail.html || parsedEmail.text || ''], { type: 'text/html' });
 		iframe.src = window.URL.createObjectURL(blob);
 	}
 </script>
@@ -46,7 +66,6 @@
 					bind:this={iframe}
 					class="h-full w-full"
 					style="height: 50vh; background-color: white;"
-					frameborder="0"
 					title={parsedEmail.subject || 'No subject'}
 					sandbox="allow-same-origin allow-popups"
 				></iframe>
@@ -58,11 +77,3 @@
 		</svelte:fragment>
 	</AccordionItem>
 {/if}
-
-<style>
-	.accordion-summary {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-</style>
