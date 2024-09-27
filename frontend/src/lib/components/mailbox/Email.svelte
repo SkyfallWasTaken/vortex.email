@@ -34,8 +34,10 @@
 					font-family: Arial, Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 				}
 			</style>
-		`
-		const blob = new Blob([styling, parsedEmail.html || parsedEmail.text || ''], { type: 'text/html' });
+		`;
+		const blob = new Blob([styling, parsedEmail.html || parsedEmail.text || ''], {
+			type: 'text/html'
+		});
 		iframe.src = window.URL.createObjectURL(blob);
 	}
 </script>
