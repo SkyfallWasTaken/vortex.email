@@ -8,7 +8,6 @@ axum = "0.7.5"
 color-eyre = "0.6.3"
 dashmap = "6.0.0"
 email-address-parser = "2.0.0"
-futures-util = "0.3.30"
 sentry = { version = "0.34.0", features = ["tracing"] }
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
 tower-http = { version = "0.6", features = ["cors"] }
