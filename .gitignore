@@ -22,3 +22,5 @@ Thumbs.db
 # Vite
 frontend/vite.config.ts.timestamp-*
 frontend/vite.config.js.timestamp-*
+
+logs

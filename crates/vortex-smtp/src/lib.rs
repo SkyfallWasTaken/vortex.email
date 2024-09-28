@@ -4,6 +4,7 @@ use nanoid::nanoid;
 use serde::Serialize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
+use tokio::time::{timeout, Duration};
 
 mod consts;
 mod esmtp;
@@ -223,7 +224,7 @@ where
 
         socket.set_nodelay(true)?;
         tokio::spawn(async move {
-            let result: Result<(), Error> = async {
+            let result = async {
                 let state = process(socket, validate_email_clone).await?;
 
                 if state.finished {
@@ -246,11 +247,19 @@ where
                 }
 
                 Ok(())
-            }
-            .await;
+            };
 
-            if let Err(e) = result {
-                tracing::error!("error processing email: {:?}", e);
+            let timeout_duration = Duration::from_secs(60 * 5);
+            match timeout(timeout_duration, result).await {
+                Ok(Err(e)) => {
+                    // handle the error from the connection handling logic
+                    tracing::error!("error handling connection: {:?}", e);
+                }
+                Err(_) => {
+                    // handle the timeout error
+                    tracing::warn!("connection timed out");
+                }
+                _ => {}
             }
         });
     }
