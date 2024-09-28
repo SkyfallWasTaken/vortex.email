@@ -77,7 +77,8 @@ async fn process<T: Send + Fn(&str) -> bool>(
             tracing::debug!("data: {:?}", msg);
             // TODO: is this correct?
             if msg.ends_with("\r\n.\r\n") {
-                if state.data.len() + n > consts::MAX_SIZE {
+                // -5 for \r\n.\r\n
+                if state.data.len() + n - 5 > consts::MAX_SIZE {
                     socket.write_all(messages::MESSAGE_TOO_LARGE).await?;
                     continue;
                 }
