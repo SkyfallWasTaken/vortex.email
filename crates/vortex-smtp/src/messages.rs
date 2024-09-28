@@ -12,6 +12,7 @@ pub const HELP_RESPONSE: &[u8] =
     b"214-go check out https://datatracker.ietf.org/doc/html/rfc5321\n";
 pub const UNRECOGNIZED_COMMAND: &[u8] = b"500 Unrecognized command\n";
 pub const USER_UNKNOWN: &[u8] = b"550 User unknown\n";
+pub const MESSAGE_TOO_LARGE: &[u8] = b"552 Message size exceeds fixed maximum message size\n";
 pub const BYE: &[u8] = b"221 Bye\n";
 
 pub fn helo_response(hostname: &str) -> String {

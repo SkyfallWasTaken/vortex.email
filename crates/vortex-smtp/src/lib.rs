@@ -37,7 +37,7 @@ pub struct State {
     mail_from: Option<String>,
     rcpt_to: Vec<String>,
     waiting_for_data: bool,
-    data: Option<Vec<u8>>, // We can't use a &[u8], as that could cause a stack overflow
+    data: Vec<u8>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
 async fn process<T: Send + Fn(&str) -> bool>(
@@ -54,7 +54,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
         mail_from: None,
         rcpt_to: Vec::new(),
         waiting_for_data: false,
-        data: None,
+        data: Vec::new(),
     };
 
     socket.write_all(messages::GREETING).await?;
@@ -77,21 +77,25 @@ async fn process<T: Send + Fn(&str) -> bool>(
             tracing::debug!("data: {:?}", msg);
             // TODO: is this correct?
             if msg.ends_with("\r\n.\r\n") {
+                if state.data.len() + n > consts::MAX_SIZE {
+                    socket.write_all(messages::MESSAGE_TOO_LARGE).await?;
+                    continue;
+                }
+
                 state.waiting_for_data = false;
                 state.finished = true;
                 tracing::trace!("got . in data, ending");
 
-                state
-                    .data
-                    .get_or_insert_with(Vec::new)
-                    .extend_from_slice(&buf[0..n - 5]); // Don't include the \r\n.\r\n
+                state.data.extend_from_slice(&buf[0..n - 5]); // Don't include the \r\n.\r\n
                 socket.write_all(messages::OK).await?;
             } else {
+                if state.data.len() + n > consts::MAX_SIZE {
+                    socket.write_all(messages::MESSAGE_TOO_LARGE).await?;
+                    continue;
+                }
+
                 tracing::trace!("adding {n} bytes to data");
-                state
-                    .data
-                    .get_or_insert_with(Vec::new)
-                    .extend_from_slice(&buf[0..n]);
+                state.data.extend_from_slice(&buf[0..n]);
             }
         } else {
             let Some(command) = Command::from_smtp_message(msg.trim()) else {
@@ -176,7 +180,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
                 Command::Rset => {
                     state.mail_from = None;
                     state.rcpt_to.clear();
-                    state.data = None;
+                    state.data = Vec::new();
                     socket.write_all(messages::OK).await?;
                 }
                 Command::Quit => {
@@ -226,11 +230,14 @@ where
                         return Err(Error::RcptToMissing);
                     }
 
+                    if state.data.is_empty() {
+                        return Err(Error::DataMissing);
+                    }
+
                     handle_event_clone(Event::EmailReceived(crate::Email {
                         mail_from: state.mail_from.ok_or(Error::MailFromMissing)?,
                         rcpt_to: state.rcpt_to,
-                        data: String::from_utf8_lossy(&state.data.ok_or(Error::DataMissing)?)
-                            .to_string(), // FIXME: this is inefficient.
+                        data: String::from_utf8_lossy(&state.data).to_string(), // FIXME: this is inefficient.
                         id: nanoid!(),
                     }));
                 } else {
