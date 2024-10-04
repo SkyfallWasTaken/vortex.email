@@ -42,6 +42,10 @@
 			refetchInterval: 10000
 		}))
 	);
+
+	$: if ($query.isError) {
+		umami.track('error-fetching-emails');
+	}
 </script>
 
 <svelte:head>
@@ -64,6 +68,8 @@
 				<button
 					class="input-group-shim"
 					on:click={copyEmail}
+					data-umami-event="copy-email"
+					data-umami-event-email-domain={$emailDomainStore}
 					aria-label={copyButtonState === 'idle'
 						? 'Copy email to clipboard'
 						: 'Copied email to clipboard!'}
@@ -88,13 +94,13 @@
 		<div>
 			{#if $query.isLoading}
 				<div
-					class="light-bg flex items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<p class="text-lg font-semibold">One sec...</p>
 				</div>
 			{:else if $query.isError}
 				<div
-					class="light-bg flex flex-col items-center justify-center rounded-md p-6 shadow-sm dark:bg-surface-500"
+					class="light-bg dark:bg-surface-500 flex flex-col items-center justify-center rounded-md p-6 shadow-sm"
 				>
 					<h2 class="text-lg font-semibold">Uh oh, something went wrong</h2>
 					<p>Sorry about that! Please refresh the page and try again.</p>
@@ -106,6 +112,7 @@
 				Hint: Wait for 10 seconds or <a
 					href="/"
 					class="text-sky-400 underline"
+					data-umami-event="refresh-link-clicked"
 					on:click={refreshPage}>refresh the page</a
 				> to see new emails.
 			</p>

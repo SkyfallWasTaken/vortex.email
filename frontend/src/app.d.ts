@@ -8,6 +8,10 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	const umami: {
+        track: (name: string) => void;
+    };
 }
 
 export {};

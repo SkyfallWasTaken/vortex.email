@@ -40,6 +40,8 @@
 		});
 		iframe.src = window.URL.createObjectURL(blob);
 	}
+
+	umami.track('email-received');
 </script>
 
 {#if parsedEmail}
