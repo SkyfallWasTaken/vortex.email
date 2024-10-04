@@ -11,7 +11,16 @@
 			}
 		}
 	});
+
+	const umamiScript = import.meta.env.VITE_UMAMI_SCRIPT;
+	const umamiWebsiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID;
 </script>
+
+<svelte:head>
+	{#if umamiScript}
+		<script defer src={umamiScript} data-website-id={umamiWebsiteId}></script>
+	{/if}
+</svelte:head>
 
 <QueryClientProvider client={queryClient}>
 	<Header />
