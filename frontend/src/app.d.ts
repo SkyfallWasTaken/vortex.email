@@ -10,8 +10,8 @@ declare global {
 	}
 
 	const umami: {
-        track: (name: string) => void;
-    };
+		track: (name: string) => void;
+	};
 }
 
 export {};
