@@ -13,6 +13,10 @@
 		<div>
 			<a href="/credits" class="underline">Credits</a>
 		</div>
+		<div>•</div>
+		<div>
+			<a href="/donate" class="underline">Donate</a>
+		</div>
 	</div>
 	<div class="ml-auto">
 		<LightSwitch />
