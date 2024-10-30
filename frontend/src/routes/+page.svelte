@@ -44,7 +44,7 @@
 	);
 
 	$: if ($query.isError) {
-		umami.track('error-fetching-emails');
+		try { umami.track('error-fetching-emails'); } catch {}
 	}
 </script>
 
