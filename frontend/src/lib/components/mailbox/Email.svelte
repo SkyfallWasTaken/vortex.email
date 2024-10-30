@@ -41,7 +41,7 @@
 		iframe.src = window.URL.createObjectURL(blob);
 	}
 
-	umami.track('email-received');
+	try { umami.track('email-received'); } catch {}
 </script>
 
 {#if parsedEmail}
