@@ -1,8 +1,10 @@
 # Vortex
 
-Vortex is a solution to the common problem of email inbox clutter. It provides temporary email addresses for signing up to newsletters, websites, and services that require an email, without compromising your primary email address. A hosted instance is available at <https://vortex.skyfall.dev>!
+![image](https://cloud-tyy4wckc7-hack-club-bot.vercel.app/0image.png)
 
-![e4494707-0aa6-4c93-aa64-25a0d0c0f7cc-image](https://github.com/SkyfallWasTaken/vortex.email/assets/55807755/96ed167b-5ace-4b25-ae4a-1b4e1053919f)
+**Tired of dealing with a cluttered email inbox?** Vortex has you covered! It’s a simple solution for keeping your primary email clean by providing temporary email addresses. Use them to sign up for newsletters, websites, and services without worrying about spam or unwanted emails.
+
+**Try it out at <https://vortex.skyfall.dev>,** where you’ll find over 10 (sub)domains to choose from!
 
 ## Why Vortex?
 
