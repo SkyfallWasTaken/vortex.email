@@ -28,7 +28,7 @@ export function Email({ email }: { email: Email }) {
         <span>{subject || "No subject"}</span>
       </Accordion.Trigger>
       <Accordion.Content>
-        <div className="bg-white">
+        <div className="bg-white text-black">
           <Letter html={html || text || ""} text={text} rewriteExternalResources={(url) => `https://wsrv.nl/?url=${url}`} />
         </div>
       </Accordion.Content>
@@ -102,11 +102,12 @@ export default function Home() {
           </button>
         </div>
       </div>
+
       <div>
         {isPending && <p className="text-center mt-8">Loading...</p>}
-        {error && <p className="text-center mt-8 text-red-500">Error: {error.message}</p>}
+        {error && <p className="text-center py-5 bg-red-500">Error: {error.message}</p>}
         {data && data.length > 0 ? (
-          <Accordion.Root type="multiple">
+          <Accordion.Root type="multiple" className="w-full md:w-1/2 rounded mx-auto">
             {data.map((email) => (
               <Email key={email.id} email={email} />
             ))}
