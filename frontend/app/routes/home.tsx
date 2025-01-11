@@ -107,12 +107,13 @@ export default function Home() {
         {isPending && <p className="text-center mt-8">Loading...</p>}
         {error && <p className="text-center py-5 bg-red-500">Error: {error.message}</p>}
         {data && data.length > 0 ? (
-          <Accordion.Root type="multiple" className="w-full md:w-1/2 rounded mx-auto">
-            {data.map((email) => (
-              <Email key={email.id} email={email} />
-            ))}
-          </Accordion.Root>
-
+          <>
+            <Accordion.Root type="multiple" className="w-full md:w-1/2 rounded mx-auto">
+              {data.map((email) => (
+                <Email key={email.id} email={email} />
+              ))}
+            </Accordion.Root>
+            <div className="mb-4 md:mb-8" /></>
         ) : <div className="text-center py-5 bg-surface0">No emails found for {debouncedUsername}@{emailDomain}</div>}
       </div>
     </>
