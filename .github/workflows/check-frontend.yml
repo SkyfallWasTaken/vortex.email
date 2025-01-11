@@ -21,8 +21,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run svelte-check
-        run: bun run check
+      - name: Run typechecks
+        run: bun run typecheck
 
-      - name: Run Prettier and ESLint checks
-        run: bun run lint
+      - name: Run build
+        run: bun run build

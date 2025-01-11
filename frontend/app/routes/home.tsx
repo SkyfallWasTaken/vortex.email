@@ -7,7 +7,7 @@ import pkg from 'lucide-react';
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useDebounce, useCopyToClipboard } from "@uidotdev/usehooks";
+import { useDebounce } from "@uidotdev/usehooks";
 import { fakerEN as faker } from '@faker-js/faker';
 import * as Accordion from "@radix-ui/react-accordion";
 
