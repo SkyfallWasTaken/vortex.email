@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useDebounce, useCopyToClipboard } from "@uidotdev/usehooks";
 import { fakerEN as faker } from '@faker-js/faker';
+import * as Accordion from "@radix-ui/react-accordion";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -18,12 +19,20 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export function Email({ email }: { email: Email }) {
-  const { html, text } = extract(email.data);
+  const { html, text, subject, from } = extract(email.data);
 
   return (
-    <div className="bg-white">
-      <Letter html={html || text || ""} text={text} rewriteExternalResources={(url) => `https://wsrv.nl/?url=${url}`} />
-    </div>
+    <Accordion.Item value={email.id}>
+      <Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 border-b border-slate-700 w-full text-left md:gap-4">
+        <span>{from?.name || from?.address || "Unknown"}</span>
+        <span>{subject || "No subject"}</span>
+      </Accordion.Trigger>
+      <Accordion.Content>
+        <div className="bg-white">
+          <Letter html={html || text || ""} text={text} rewriteExternalResources={(url) => `https://wsrv.nl/?url=${url}`} />
+        </div>
+      </Accordion.Content>
+    </Accordion.Item>
   )
 }
 
@@ -47,7 +56,7 @@ export default function Home() {
       if (!debouncedUsername) {
         return Promise.resolve([]);
       }
-      return fetch(`https://api.vortex.skyfall.dev/emails/${debouncedUsername}@${emailDomain}`).then((res) =>
+      return fetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}`).then((res) =>
         res.json(),
       );
     },
@@ -97,9 +106,12 @@ export default function Home() {
         {isPending && <p className="text-center mt-8">Loading...</p>}
         {error && <p className="text-center mt-8 text-red-500">Error: {error.message}</p>}
         {data && data.length > 0 ? (
-          data.map((email) => (
-            <Email key={email.id} email={email} />
-          ))
+          <Accordion.Root type="multiple">
+            {data.map((email) => (
+              <Email key={email.id} email={email} />
+            ))}
+          </Accordion.Root>
+
         ) : <div className="text-center py-5 bg-surface0">No emails found for {debouncedUsername}@{emailDomain}</div>}
       </div>
     </>
