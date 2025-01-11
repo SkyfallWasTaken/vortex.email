@@ -23,9 +23,9 @@ export function Email({ email }: { email: Email }) {
 
   return (
     <Accordion.Item value={email.id}>
-      <Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 border-b border-slate-700 w-full text-left md:gap-4">
-        <span>{from?.name || from?.address || "Unknown"}</span>
-        <span>{subject || "No subject"}</span>
+      <Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 border-b border-overlay0 w-full text-left md:gap-4">
+        <span className="truncate">{from?.name || from?.address || "Unknown"}</span>
+        <span className="truncate">{subject || "No subject"}</span>
       </Accordion.Trigger>
       <Accordion.Content>
         <div className="bg-white text-black">
@@ -71,8 +71,8 @@ export default function Home() {
           <p className="text-xl">For annoying newsletters, websites, and everything in between! Protect your privacy and avoid spam with temporary email addresses.</p>
         </div>
         <div className="flex gap-2 justify-center items-center w-full md:w-1/2 mx-auto mb-2.5 mt-6">
-          <input type="text" className="h-12 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" placeholder="Enter your email address" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <select name="email-domain" className="h-12 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)}>
+          <input type="text" className="h-12 bg-surface0 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" placeholder="Enter your email address" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <select name="email-domain" className="h-12 bg-surface0 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)}>
             {emailDomains.map((domain) => (
               <option key={domain} value={domain}>@{domain}</option>
             ))}
