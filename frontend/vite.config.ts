@@ -1,16 +1,7 @@
-import { sentrySvelteKit } from '@sentry/sveltekit';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react-swc'
 
+// https://vite.dev/config/
 export default defineConfig({
-	plugins: [
-		sentrySvelteKit({
-			sourceMapsUploadOptions: {
-				org: 'zephyr-labs',
-				project: 'vortex'
-			}
-		}),
-		sveltekit()
-	],
-	envDir: '../'
-});
+  plugins: [react()],
+})
