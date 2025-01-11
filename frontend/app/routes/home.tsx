@@ -32,7 +32,7 @@ function getRandomEmailDomain(emailDomains: string[]) {
 }
 
 export default function Home() {
-  const [username, setUsername] = useState(faker.internet.username());
+  const [username, setUsername] = useState(faker.internet.username().toLowerCase());
   const debouncedUsername = useDebounce(username, 400);
 
   const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(',');
@@ -40,7 +40,6 @@ export default function Home() {
   const [emailDomain, setEmailDomain] = useState(randomDomain);
 
   const [copied, setCopied] = useState(false);
-  const [copiedContents, setCopiedContents] = useCopyToClipboard();
 
   const { isPending, error, data } = useQuery<Email[]>({
     queryKey: ['emails', debouncedUsername, emailDomain],
@@ -57,43 +56,41 @@ export default function Home() {
 
   return (
     <>
-      <div className="my-9">
+      <div className="my-9 mx-2">
         <div className="space-y-2 text-center w-[80%] md:w-2/3 mx-auto">
-          <h1 className="text-6xl font-bold">Free, disposable email addresses</h1>
+          <h1 className="text-4xl md:text-6xl font-bold">Free, disposable email addresses</h1>
           <p className="text-xl">For annoying newsletters, websites, and everything in between! Protect your privacy and avoid spam with temporary email addresses.</p>
         </div>
-        <div>
-          <div className="flex justify-center items-center w-1/3 mx-auto mb-2.5">
-            <input type="text" className="h-12 mx-auto mt-6 p-4 focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" placeholder="Enter your email address" value={username} onChange={(e) => setUsername(e.target.value)} />
-            <select name="email-domain" className="h-12 mx-auto mt-6 p-4 focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)}>
-              {emailDomains.map((domain) => (
-                <option key={domain} value={domain}>@{domain}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-4 text-overlay1 justify-center items-center w-1/3 mx-auto">
-            <button className="flex items-center space-x-2" onClick={() => {
-              setCopiedContents(debouncedUsername + "@" + emailDomain);
-              setCopied(true);
-              setTimeout(() => {
-                setCopied(false);
-              }, 1000);
-            }}>
-              {copied ? (
-                <CopyCheck size={16} />
-              ) : (
-                <Copy size={16} />
-              )}
-              <span>{copied ? 'Copied!' : 'Copy email'}</span>
-            </button>
-            <button className="flex items-center space-x-2" onClick={() => {
-              setUsername(faker.internet.username());
-              setEmailDomain(getRandomEmailDomain(emailDomains));
-            }}>
-              <RefreshCcw size={16} />
-              <span>Generate new email</span>
-            </button>
-          </div>
+        <div className="flex gap-2 justify-center items-center w-full md:w-1/2 mx-auto mb-2.5 mt-6">
+          <input type="text" className="h-12 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" placeholder="Enter your email address" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <select name="email-domain" className="h-12 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)}>
+            {emailDomains.map((domain) => (
+              <option key={domain} value={domain}>@{domain}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex gap-4 text-overlay1 justify-center items-center md:w-1/3 mx-auto">
+          <button className="flex items-center space-x-2" onClick={() => {
+            navigator.clipboard.writeText(debouncedUsername + "@" + emailDomain);
+            setCopied(true);
+            setTimeout(() => {
+              setCopied(false);
+            }, 1000);
+          }}>
+            {copied ? (
+              <CopyCheck size={16} />
+            ) : (
+              <Copy size={16} />
+            )}
+            <span>{copied ? 'Copied!' : 'Copy email'}</span>
+          </button>
+          <button className="flex items-center space-x-2" onClick={() => {
+            setUsername(faker.internet.username().toLowerCase());
+            setEmailDomain(getRandomEmailDomain(emailDomains));
+          }}>
+            <RefreshCcw size={16} />
+            <span>Generate new email</span>
+          </button>
         </div>
       </div>
       <div>
