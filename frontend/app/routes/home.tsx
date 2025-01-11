@@ -56,17 +56,19 @@ export default function Home() {
           <input type="text" className="h-12 mx-auto mt-6 p-4 focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" placeholder="Enter your email address" onChange={(e) => setUsername(e.target.value)} />
           <select name="email-domain" className="h-12 mx-auto mt-6 p-4 focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded" value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)}>
             {emailDomains.map((domain) => (
-              <option key={domain} value={domain} onChange={(e) => setEmailDomain(domain)}>@{domain}</option>
+              <option key={domain} value={domain}>@{domain}</option>
             ))}
           </select>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {isPending && <p>Loading...</p>}
-        {error && <p>Error: {error.message}</p>}
-        {data && data.map((email) => (
-          <Email email={email} key={email.id} />
-        ))}
+      <div>
+        {isPending && <p className="text-center mt-8">Loading...</p>}
+        {error && <p className="text-center mt-8 text-red-500">Error: {error.message}</p>}
+        {data && data.length > 0 ? (
+          data.map((email) => (
+            <Email key={email.id} email={email} />
+          ))
+        ) : <p className="text-center mt-8">No emails found.</p>}
       </div>
     </>
   );
