@@ -39,6 +39,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {import.meta.env.VITE_UMAMI_SCRIPT && (
+          <script
+            defer
+            data-website-id={import.meta.env.VITE_UMAMI_WEBSITE_ID}
+            src={import.meta.env.VITE_UMAMI_SCRIPT}
+          />
+        )}
       </head>
       <body className="bg-base text-text">
         <QueryClientProvider client={queryClient}>
