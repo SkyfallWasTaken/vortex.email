@@ -6,8 +6,8 @@ import { extract } from 'letterparser';
 import { Copy, CopyCheck, RefreshCcw } from 'lucide-react';
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useDebounce } from "@uidotdev/usehooks";
+import { useEffect, useState } from "react";
+import { useDebounce, useIsClient } from "@uidotdev/usehooks";
 import { fakerEN as faker } from '@faker-js/faker';
 import * as Accordion from "@radix-ui/react-accordion";
 
@@ -40,13 +40,19 @@ function getRandomEmailDomain(emailDomains: string[]) {
   return emailDomains[Math.floor(Math.random() * emailDomains.length)];
 }
 
-export default function Home() {
-  const [username, setUsername] = useState(faker.internet.username().toLowerCase());
-  const debouncedUsername = useDebounce(username, 400);
+const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(',');
+export async function loader() {
+  return {
+    username: faker.internet.username().toLowerCase(),
+    emailDomain: getRandomEmailDomain(emailDomains),
+  };
+}
 
-  const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(',');
-  const randomDomain = getRandomEmailDomain(emailDomains);
-  const [emailDomain, setEmailDomain] = useState(randomDomain);
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { username: randomUsername, emailDomain: randomEmailDomain } = loaderData;
+  const [username, setUsername] = useState(randomUsername);
+  const debouncedUsername = useDebounce(username, 400);
+  const [emailDomain, setEmailDomain] = useState(randomEmailDomain);
 
   const [copied, setCopied] = useState(false);
 
