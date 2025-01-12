@@ -1,5 +1,4 @@
 import type { Email as EmailType } from "../email";
-import type { Route } from "./+types/home";
 
 import { extract } from "letterparser";
 import { Copy, CopyCheck, RefreshCcw } from "lucide-react";
@@ -51,19 +50,14 @@ function getRandomEmailDomain(emailDomains: string[]) {
 }
 
 const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(",");
-export async function loader() {
-	return {
-		username: faker.internet.username().toLowerCase(),
-		emailDomain: getRandomEmailDomain(emailDomains),
-	};
-}
-
-export default function Home({ loaderData }: Route.ComponentProps) {
-	const { username: randomUsername, emailDomain: randomEmailDomain } =
-		loaderData;
-	const [username, setUsername] = useState(randomUsername);
+export default function Home() {
+	const [username, setUsername] = useState(
+		faker.internet.username().toLowerCase(),
+	);
 	const debouncedUsername = useDebounce(username, 400);
-	const [emailDomain, setEmailDomain] = useState(randomEmailDomain);
+	const [emailDomain, setEmailDomain] = useState(
+		getRandomEmailDomain(emailDomains),
+	);
 
 	const [copied, setCopied] = useState(false);
 
