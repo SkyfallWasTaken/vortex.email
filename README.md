@@ -82,7 +82,7 @@ Secondly, [install rootless Docker.](https://docs.docker.com/engine/security/roo
 Then this Docker command:
 
 ```bash
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE ghcr.io/skyfallwastaken/vortex.email:latest
+docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE --cap-add=CAP_DAC_OVERRIDE ghcr.io/skyfallwastaken/vortex.email:latest
 ```
 
 And finally, this Caddy reverse proxy command:
