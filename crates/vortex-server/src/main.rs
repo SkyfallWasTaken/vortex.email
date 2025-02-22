@@ -1,6 +1,5 @@
 use std::env;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 use axum::{
     extract::Path,
@@ -19,16 +18,8 @@ use vortex_smtp::{event::Event, Email};
 
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:25";
-const MAILBOX_TTL: Duration = Duration::from_secs(3600); // 1 hour TTL
 
-/// A wrapper for storing a value with an expiration timestamp.
-#[derive(Debug)]
-struct TtlEntry<T> {
-    value: T,
-    expires_at: Instant,
-}
-
-type EmailsMap = DashMap<String, TtlEntry<Vec<Email>>>;
+type EmailsMap = DashMap<String, Vec<Email>>;
 
 #[tracing::instrument]
 async fn server_main() -> Result<()> {
@@ -41,30 +32,6 @@ async fn server_main() -> Result<()> {
         Arc::new(email_domains.split(',').map(String::from).collect());
 
     let email_domains_smtp = email_domains.clone();
-
-    // Background cleanup task to remove expired mailboxes
-    let cleanup_map = emails_map.clone();
-    tokio::spawn(async move {
-        let cleanup_interval = Duration::from_secs(500);
-        loop {
-            tokio::time::sleep(cleanup_interval).await;
-            let now = Instant::now();
-            // Collect keys to avoid holding locks while removing.
-            let keys: Vec<String> = cleanup_map
-                .iter()
-                .map(|entry| entry.key().clone())
-                .collect();
-            for key in keys {
-                if let Some(entry) = cleanup_map.get(&key) {
-                    if entry.expires_at <= now {
-                        cleanup_map.remove(&key);
-                        tracing::debug!(%key, "removed expired mailbox");
-                    }
-                }
-            }
-        }
-    });
-
     let smtp_server = vortex_smtp::listen(
         SMTP_ADDR,
         move |email| {
@@ -79,10 +46,11 @@ async fn server_main() -> Result<()> {
                     rcpt_to = email.rcpt_to.join(", "),
                     "email received"
                 );
-                for key in email.rcpt_to.clone() {
-                    if let Some(mut entry) = emails_map.get_mut(&key) {
-                        entry.value.push(email.clone());
-                    }
+
+                let keys = email.rcpt_to.clone();
+                for key in keys {
+                    let mut emails = emails_map.get_mut(&key).unwrap();
+                    emails.push(email.clone());
                 }
             }
         },
@@ -127,34 +95,14 @@ async fn get_emails(
     Extension(emails_map): Extension<Arc<EmailsMap>>,
     Extension(email_domains): Extension<Arc<Vec<String>>>,
 ) -> (StatusCode, Json<Vec<Email>>) {
-    let now = Instant::now();
+    let emails_map = emails_map.as_ref();
 
     if validate_vortex_email(&email, &email_domains) {
-        if let Some(entry) = emails_map.get(&email) {
-            // If the mailbox is still valid, return its emails.
-            if entry.expires_at > now {
-                (StatusCode::OK, Json(entry.value.clone()))
-            } else {
-                // Mailbox has expired; remove it and create a fresh one.
-                emails_map.remove(&email);
-                emails_map.insert(
-                    email.clone(),
-                    TtlEntry {
-                        value: Vec::new(),
-                        expires_at: now + MAILBOX_TTL,
-                    },
-                );
-                (StatusCode::CREATED, Json(Vec::new()))
-            }
+        if let Some(emails) = emails_map.get(&email) {
+            (StatusCode::OK, Json(emails.clone()))
         } else {
             tracing::info!(email, "mailbox not found, adding to map");
-            emails_map.insert(
-                email.clone(),
-                TtlEntry {
-                    value: Vec::new(),
-                    expires_at: now + MAILBOX_TTL,
-                },
-            );
+            emails_map.insert(email.clone(), Vec::new());
             (StatusCode::CREATED, Json(Vec::new()))
         }
     } else {
@@ -174,9 +122,12 @@ fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    let log_dir = env::var("LOG_DIR").wrap_err("failed to read env var LOG_DIR")?;
+    let appender = tracing_appender::rolling::daily(log_dir, "vortex-server.log");
+    let (non_blocking_appender, _log_guard) = tracing_appender::non_blocking(appender);
     tracing_subscriber::Registry::default()
         .with(sentry::integrations::tracing::layer())
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_writer(non_blocking_appender))
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
