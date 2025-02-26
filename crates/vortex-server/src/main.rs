@@ -1,4 +1,5 @@
 // Piling on some tech debt because it's midnight and I just want this fixed atm
+// I promise this will be fixed soon enough
 use std::env;
 use std::sync::Arc;
 
@@ -16,7 +17,8 @@ use dashmap::DashMap;
 use email_address_parser::EmailAddress;
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::cors::CorsLayer;
-use tracing_subscriber::prelude::*;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 use vortex_smtp::{event::Event, Email};
 
@@ -135,14 +137,14 @@ fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let log_dir = env::var("LOG_DIR").wrap_err("failed to read env var LOG_DIR")?;
-    let appender = tracing_appender::rolling::daily(log_dir, "vortex-server.log");
-    let (non_blocking_appender, _log_guard) = tracing_appender::non_blocking(appender);
-    tracing_subscriber::Registry::default()
-        .with(sentry::integrations::tracing::layer())
-        .with(tracing_subscriber::fmt::layer().with_writer(non_blocking_appender))
-        .with(tracing_subscriber::EnvFilter::from_default_env())
-        .init();
+    let subscriber = FmtSubscriber::builder()
+        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+        // will be written to stdout.
+        .with_max_level(Level::TRACE)
+        // completes the builder.
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let sentry_dsn =
         env::var("VITE_SENTRY_DSN").wrap_err("failed to read env var VITE_SENTRY_DSN")?;
