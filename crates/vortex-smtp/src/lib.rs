@@ -46,6 +46,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
     is_email_valid: T,
 ) -> Result<State, Error> {
     let mut buf = vec![0; consts::MAX_SIZE];
+    tracing::debug!("processing connection");
 
     let mut state = State {
         esmtp: false,
@@ -69,6 +70,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
                 return Err(Error::NetworkError(e));
             }
         };
+        tracing::debug!("read {n} bytes");
 
         let msg = String::from_utf8_lossy(&buf[0..n]);
         tracing::trace!("received: {:?}", msg);
