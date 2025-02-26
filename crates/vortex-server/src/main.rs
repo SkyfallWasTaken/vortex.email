@@ -21,7 +21,7 @@ use tracing_subscriber::prelude::*;
 use vortex_smtp::{event::Event, Email};
 
 const HTTP_ADDR: &str = "0.0.0.0:3000";
-const SMTP_ADDR: &str = "0.0.0.0:25";
+const SMTP_ADDR: &str = "0.0.0.0:2525";
 
 type EmailsMap = DashMap<String, Vec<Email>>;
 
