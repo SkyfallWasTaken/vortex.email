@@ -1,6 +1,6 @@
 FROM rust:1-bookworm as builder
 
-EXPOSE 25
+EXPOSE 2525
 EXPOSE 3000
 
 WORKDIR /usr/src/app
