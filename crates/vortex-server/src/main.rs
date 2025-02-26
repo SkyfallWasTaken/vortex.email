@@ -1,3 +1,4 @@
+// Piling on some tech debt because it's midnight and I just want this fixed atm
 use std::env;
 use std::sync::Arc;
 
@@ -7,10 +8,13 @@ use axum::{
     routing::get,
     Extension, Json, Router,
 };
-use color_eyre::{eyre::Context, Report, Result};
+use color_eyre::{
+    eyre::{eyre, Context},
+    Result,
+};
 use dashmap::DashMap;
 use email_address_parser::EmailAddress;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::prelude::*;
 
@@ -20,6 +24,14 @@ const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:25";
 
 type EmailsMap = DashMap<String, Vec<Email>>;
+
+async fn flatten<T, E: ToString>(handle: JoinHandle<Result<T, E>>) -> Result<T, String> {
+    match handle.await {
+        Ok(Ok(result)) => Ok(result),
+        Ok(Err(err)) => Err(err.to_string()),
+        Err(_) => Err("unknown error".to_string()),
+    }
+}
 
 #[tracing::instrument]
 async fn server_main() -> Result<()> {
@@ -32,29 +44,32 @@ async fn server_main() -> Result<()> {
         Arc::new(email_domains.split(',').map(String::from).collect());
 
     let email_domains_smtp = email_domains.clone();
-    let smtp_server = vortex_smtp::listen(
-        SMTP_ADDR,
-        move |email| {
-            tracing::debug!(email, "validating email");
-            validate_vortex_email(email, &email_domains_smtp)
-                && emails_map_validator.contains_key(email)
-        },
-        move |event| match &event {
-            Event::EmailReceived(email) => {
-                tracing::debug!(
-                    mail_from = email.mail_from,
-                    rcpt_to = email.rcpt_to.join(", "),
-                    "email received"
-                );
+    let smtp_server = tokio::spawn(async move {
+        vortex_smtp::listen(
+            SMTP_ADDR,
+            move |email| {
+                tracing::debug!(email, "validating email");
+                validate_vortex_email(email, &email_domains_smtp)
+                    && emails_map_validator.contains_key(email)
+            },
+            move |event| match &event {
+                Event::EmailReceived(email) => {
+                    tracing::debug!(
+                        mail_from = email.mail_from,
+                        rcpt_to = email.rcpt_to.join(", "),
+                        "email received"
+                    );
 
-                let keys = email.rcpt_to.clone();
-                for key in keys {
-                    let mut emails = emails_map.get_mut(&key).unwrap();
-                    emails.push(email.clone());
+                    let keys = email.rcpt_to.clone();
+                    for key in keys {
+                        let mut emails = emails_map.get_mut(&key).unwrap();
+                        emails.push(email.clone());
+                    }
                 }
-            }
-        },
-    );
+            },
+        )
+        .await
+    });
 
     let http_server = tokio::spawn(async move {
         let cors = CorsLayer::new().allow_methods([Method::GET]).allow_origin(
@@ -79,12 +94,10 @@ async fn server_main() -> Result<()> {
         axum::serve(listener, router).await
     });
 
-    let http_handle = tokio::spawn(async { http_server.await.map_err(Report::from) });
-    let smtp_handle = tokio::spawn(async { smtp_server.await.map_err(Report::from) });
-    let (http_result, smtp_result) = tokio::try_join!(http_handle, smtp_handle)?;
-    http_result??;
-    smtp_result?;
-    tracing::debug!("exiting.");
+    tracing::debug!("starting servers");
+    if let Err(err) = tokio::try_join!(flatten(http_server), flatten(smtp_server)) {
+        return Err(eyre!(err));
+    };
 
     Ok(())
 }
