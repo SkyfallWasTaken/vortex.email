@@ -16,7 +16,7 @@ use messages::Command;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("network error: {0}")]
+    #[error("SMTP network error: {0}")]
     NetworkError(#[from] std::io::Error),
 
     #[error("mail from missing")]
