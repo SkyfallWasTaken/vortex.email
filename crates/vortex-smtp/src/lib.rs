@@ -215,7 +215,9 @@ where
     F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
     G: Fn(Event) + Send + Sync + Clone + 'static,        // Added Clone here
 {
-    let listener = TcpListener::bind(addr).await?;
+    let listener = TcpListener::bind(addr)
+        .await
+        .map_err(|e| Error::NetworkError(e))?;
 
     tracing::debug!("listening on {addr}");
 
