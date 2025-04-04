@@ -109,7 +109,7 @@ export default function Home() {
 
 	return (
 		<>
-			<div className="my-9 mx-3 md:mx-6">
+			<div className="mt-12 mb-9 mx-3 md:mx-6">
 				<div className="space-y-2 text-center w-[80%] md:w-2/3 mx-auto">
 					<h1 className="text-4xl md:text-6xl font-bold">
 						Free, disposable email addresses
