@@ -150,8 +150,11 @@ export default function Home() {
 						type="button"
 						className="flex items-center space-x-2"
 						onClick={() => {
-							setUsername(faker.internet.username().toLowerCase());
-							setEmailDomain(getRandomEmailDomain(emailDomains));
+							const username = faker.internet.username().toLowerCase();
+							const emailDomain = getRandomEmailDomain(emailDomains);
+							queryClient.setQueryData(["emails", username, emailDomain], []);
+							setUsername(username);
+							setEmailDomain(emailDomain);
 						}}
 					>
 						<RefreshCcw size={16} />
