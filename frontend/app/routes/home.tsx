@@ -35,8 +35,8 @@ export function Email({ email }: { email: EmailType }) {
 				</span>
 				<span className="truncate">{subject || "No subject"}</span>
 			</Accordion.Trigger>
-			<Accordion.Content>
-				<div className=" bg-white dark:bg-black text-black dark:text-white text-[15px] p-4">
+			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden">
+				<div className="bg-white dark:bg-black text-black dark:text-white text-[15px] p-4">
 					<Letter
 						html={html || text || ""}
 						text={text}
