@@ -1,0 +1,4 @@
+[phases.setup]
+nixOverlays = [
+    'https://github.com/SkyfallWasTaken/rust-overlay/archive/master.tar.gz',
+]
