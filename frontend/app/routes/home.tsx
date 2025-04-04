@@ -6,7 +6,7 @@ import { Letter } from "react-letter";
 
 import { fakerEN as faker } from "@faker-js/faker";
 import * as Accordion from "@radix-ui/react-accordion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce, useLocalStorage } from "@uidotdev/usehooks";
 import { useState } from "react";
 
@@ -93,6 +93,7 @@ export default function Home() {
 		getRandomEmailDomain(emailDomains),
 	);
 
+	const queryClient = useQueryClient();
 	const { isPending, error, data } = useQuery<EmailType[]>({
 		queryKey: ["emails", debouncedUsername, emailDomain],
 		queryFn: () => {
@@ -172,15 +173,30 @@ export default function Home() {
 					)}
 					{data && data.length > 0 ? (
 						<>
-							<Accordion.Root
-								type="multiple"
-								className="w-full md:w-1/2 mx-auto" // Removed bg-surface0 and rounded
-							>
-								{data.map((email) => (
-									<Email key={email.id} email={email} />
-								))}
-							</Accordion.Root>
-							<div className="mb-4 md:mb-8" />
+							<div className="w-full md:w-1/2 mx-auto">
+								<Accordion.Root
+									type="multiple"
+								>
+									{data.map((email) => (
+										<Email key={email.id} email={email} />
+									))}
+								</Accordion.Root>
+								<div className="mb-4" />
+								<button
+									className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-100 font-semibold"
+									onClick={async () => {
+										queryClient.setQueryData(["emails", debouncedUsername, emailDomain], []);
+										await fetch(
+											`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}/clear`,
+											{
+												method: "DELETE",
+											},
+										);
+									}}
+								>
+									Clear all emails
+								</button>
+							</div>
 						</>
 					) : (!isPending && (
 						<div className="flex bg-mauve text-base items-center justify-center flex-col text-center py-5 rounded shadow-sm">

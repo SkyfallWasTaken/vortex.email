@@ -6,7 +6,7 @@ use std::sync::Arc;
 use axum::{
     extract::Path,
     http::{HeaderValue, Method, StatusCode},
-    routing::get,
+    routing::{delete, get},
     Extension, Json, Router,
 };
 use color_eyre::{
@@ -87,6 +87,7 @@ async fn server_main() -> Result<()> {
                 get(|| async { format!("vortex-server v{}", env!("CARGO_PKG_VERSION")) }),
             )
             .route("/emails/:email", get(get_emails))
+            .route("/emails/:email/clear", delete(clear_emails))
             .layer(Extension(emails_map_smtp))
             .layer(Extension(email_domains))
             .layer(cors);
@@ -119,6 +120,27 @@ async fn get_emails(
             tracing::info!(email, "mailbox not found, adding to map");
             emails_map.insert(email.clone(), Vec::new());
             (StatusCode::CREATED, Json(Vec::new()))
+        }
+    } else {
+        (StatusCode::BAD_REQUEST, Json(Vec::new()))
+    }
+}
+
+#[tracing::instrument]
+async fn clear_emails(
+    Path(email): Path<String>,
+    Extension(emails_map): Extension<Arc<EmailsMap>>,
+    Extension(email_domains): Extension<Arc<Vec<String>>>,
+) -> (StatusCode, Json<Vec<Email>>) {
+    let emails_map = emails_map.as_ref();
+
+    if validate_vortex_email(&email, &email_domains) {
+        if let Some(mut emails) = emails_map.get_mut(&email) {
+            emails.clear();
+            (StatusCode::OK, Json(emails.clone()))
+        } else {
+            tracing::info!(email, "mailbox not found");
+            (StatusCode::NOT_FOUND, Json(Vec::new()))
         }
     } else {
         (StatusCode::BAD_REQUEST, Json(Vec::new()))
