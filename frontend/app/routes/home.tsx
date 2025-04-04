@@ -25,15 +25,18 @@ export function Email({ email }: { email: EmailType }) {
 	const { html, text, subject, from } = extract(email.data);
 
 	return (
-		<Accordion.Item value={email.id}>
-			<Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 border-b border-overlay0 w-full text-left md:gap-4">
-				<span className="truncate">
+		<Accordion.Item
+			value={email.id}
+			className="border border-surface1 rounded mb-2 bg-surface0 overflow-hidden" // Added border, rounding, margin, background, and overflow hidden
+		>
+			<Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 w-full text-left md:gap-4"> {/* Removed border-b */}
+				<span className="truncate font-semibold">
 					{from?.name || from?.address || "Unknown"}
 				</span>
 				<span className="truncate">{subject || "No subject"}</span>
 			</Accordion.Trigger>
 			<Accordion.Content>
-				<div className="bg-white text-black">
+				<div className=" bg-white dark:bg-black text-black dark:text-white text-[15px] p-4">
 					<Letter
 						html={html || text || ""}
 						text={text}
@@ -171,7 +174,7 @@ export default function Home() {
 						<>
 							<Accordion.Root
 								type="multiple"
-								className="w-full md:w-1/2 rounded mx-auto"
+								className="w-full md:w-1/2 mx-auto" // Removed bg-surface0 and rounded
 							>
 								{data.map((email) => (
 									<Email key={email.id} email={email} />
@@ -179,7 +182,7 @@ export default function Home() {
 							</Accordion.Root>
 							<div className="mb-4 md:mb-8" />
 						</>
-					) : (
+					) : (!isPending && (
 						<div className="flex bg-mauve text-base items-center justify-center flex-col text-center py-5 rounded shadow-sm">
 							<Inbox size={42} strokeWidth={1.5} className="mb-2" />
 							<h2 className="text-xl">
@@ -190,7 +193,7 @@ export default function Home() {
 							</p>
 							<CopyButton username={username} emailDomain={emailDomain} />
 						</div>
-					)}
+					))}
 				</div>
 			</div>
 		</>
