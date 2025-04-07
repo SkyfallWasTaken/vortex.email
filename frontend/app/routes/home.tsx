@@ -66,17 +66,11 @@ export function Email({ email }: { email: EmailType }) {
 	);
 }
 
-function getRandomEmailDomain(emailDomains: string[]) {
-	return emailDomains[Math.floor(Math.random() * emailDomains.length)];
-}
-
 function CopyButton({
-	username,
-	emailDomain,
+	email,
 	highlightOnCopy = false,
 }: {
-	username: string;
-	emailDomain: string;
+	email: string;
 	highlightOnCopy?: boolean;
 }) {
 	const [copied, setCopied] = useState(false);
@@ -86,7 +80,7 @@ function CopyButton({
 			type="button"
 			className={`flex items-center space-x-2 ${copied && highlightOnCopy ? "text-green" : ""}`}
 			onClick={() => {
-				navigator.clipboard.writeText(`${username}@${emailDomain}`);
+				navigator.clipboard.writeText(email);
 				setCopied(true);
 				setTimeout(() => {
 					setCopied(false);
@@ -100,26 +94,20 @@ function CopyButton({
 }
 
 const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(",");
+function getRandomEmail() {
+	const emailDomain = emailDomains[Math.floor(Math.random() * emailDomains.length)];
+	return `${faker.internet.username().toLowerCase()}@${emailDomain}`;
+}
 export default function Home() {
-	const [username, setUsername] = useLocalStorage(
-		"username",
-		faker.internet.username().toLowerCase(),
-	);
-	const debouncedUsername = useDebounce(username, 400);
-	const [emailDomain, setEmailDomain] = useLocalStorage(
-		"emailDomain",
-		getRandomEmailDomain(emailDomains),
-	);
+	const [email, setEmail] = useLocalStorage("email", getRandomEmail());
 
 	const queryClient = useQueryClient();
 	const { isPending, error, data } = useQuery<EmailType[]>({
-		queryKey: ["emails", debouncedUsername, emailDomain],
+		queryKey: ["emails", email],
 		queryFn: () => {
-			if (!debouncedUsername) {
-				return Promise.resolve([]);
-			}
+
 			return fetch(
-				`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}`,
+				`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`,
 			).then((res) => (res.json() as Promise<EmailType[]>)).then((emails) => emails.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
 		},
 		refetchInterval: 7000,
@@ -137,42 +125,26 @@ export default function Home() {
 						Protect your privacy and avoid spam with temporary email addresses.
 					</p>
 				</div>
-				<div className="flex gap-2 justify-center items-center w-full md:w-1/2 mx-auto mb-2.5 mt-6">
-					<input
-						type="text"
-						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full border border-surface1 focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
-						placeholder="Enter your email address"
-						value={username}
-						onChange={(e) => setUsername(e.target.value)}
-					/>
-					<select
-						name="email-domain"
-						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full border border-surface1 focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
-						value={emailDomain}
-						onChange={(e) => setEmailDomain(e.target.value)}
-					>
-						{emailDomains.map((domain) => (
-							<option key={domain} value={domain}>
-								@{domain}
-							</option>
-						))}
-					</select>
+
+				<p className="font-semibold text-lg text-center mb-2 mt-6">
+					Your email address:
+				</p>
+
+				<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded w-full md:w-1/2 mx-auto mb-2.5">
+					{email}
 				</div>
 				<div className="flex gap-4 text-blue justify-center items-center md:w-1/3 mx-auto">
 					<CopyButton
-						username={username}
-						emailDomain={emailDomain}
+						email={email}
 						highlightOnCopy
 					/>
 					<button
 						type="button"
 						className="flex items-center space-x-2"
 						onClick={() => {
-							const username = faker.internet.username().toLowerCase();
-							const emailDomain = getRandomEmailDomain(emailDomains);
-							queryClient.setQueryData(["emails", username, emailDomain], []);
-							setUsername(username);
-							setEmailDomain(emailDomain);
+							const newEmail = getRandomEmail();
+							queryClient.setQueryData(["emails", newEmail], []);
+							setEmail(newEmail);
 						}}
 					>
 						<RefreshCcw size={16} />
@@ -205,13 +177,13 @@ export default function Home() {
 									className="text-center border border-surface0 rounded bg-surface0/30 hover:bg-red-500 px-4 py-2 w-full transition duration-350 font-semibold"
 									onClick={async () => {
 										await fetch(
-											`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}/clear`,
+											`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`,
 											{
 												method: "DELETE",
 											},
 										);
 										queryClient.setQueryData(
-											["emails", debouncedUsername, emailDomain],
+											["emails", email],
 											[],
 										);
 									}}
@@ -222,15 +194,16 @@ export default function Home() {
 						</>
 					) : (
 						!isPending && (
-							<div className="flex bg-mauve text-base items-center justify-center flex-col text-center py-5 rounded shadow-sm">
-								<Inbox size={42} strokeWidth={1.5} className="mb-2" />
-								<h2 className="text-xl">
-									No emails found for {debouncedUsername}@{emailDomain}
-								</h2>
-								<p className="mb-2.5">
-									Copy your email address and start using it to receive messages
-								</p>
-								<CopyButton username={username} emailDomain={emailDomain} />
+							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto mb-2.5">
+								<Inbox size={64} strokeWidth={1.25} className="w-1/4 md:w-1/5 min-w-1/4" />
+								<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
+									<h2 className="text-xl font-medium">
+										No emails found for {email}
+									</h2>
+									<p>
+										Copy your email address and start using it to receive messages
+									</p>
+								</div>
 							</div>
 						)
 					)}
