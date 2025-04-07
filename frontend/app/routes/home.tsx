@@ -223,7 +223,7 @@ export default function Home() {
 								</Accordion.Root>
 								<div className="mb-4" />
 								<button
-									className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
+									className="text-center border border-surface0 rounded bg-surface0/30 hover:bg-red-500 px-4 py-2 w-full transition duration-350 font-semibold"
 									onClick={async () => {
 										queryClient.setQueryData(
 											["emails", debouncedUsername, emailDomain],
