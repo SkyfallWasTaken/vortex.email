@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					/>
 				)}
 			</head>
-			<body className="bg-base text-text">
+			<body className="bg-mantle text-text">
 				<QueryClientProvider client={queryClient}>
 					<Header />
 					{children}
@@ -78,7 +78,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	}
 
 	return (
-		<main className="pt-16 p-4 container mx-auto bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]">
+		<main className="pt-16 p-4 container mx-auto">
 			<h1>{message}</h1>
 			<p>{details}</p>
 			{stack && (
