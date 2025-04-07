@@ -1,6 +1,6 @@
 export default function Credits() {
     return (
-        <div className="flex flex-col md:p-6 mx-auto prose">
+        <div className="flex flex-col md:p-6 mx-6 my-6 prose">
             <h1 className="mb-0">Credits</h1>
             <p className="mb-0">Thank you to all the people who helped make this project possible!</p>
 
