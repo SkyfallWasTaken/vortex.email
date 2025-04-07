@@ -34,7 +34,6 @@ export function Email({ email }: { email: EmailType }) {
 			className="border border-surface1 rounded mb-2 bg-surface0 overflow-hidden shadow-sm hover:shadow transition-shadow duration-200"
 		>
 			<Accordion.Trigger className="flex w-full text-left py-4 px-5">
-				{/* Desktop: Row layout */}
 				<div className=" flex items-center gap-4 w-full">
 					<img
 						src={brandfetchUrl}
