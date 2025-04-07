@@ -69,7 +69,7 @@ export default function Home() {
 	return (
 		<>
 			<div className="my-12 mx-3 md:mx-6">
-				<div className="space-y-2 text-center w-[80%] md:w-2/3 mx-auto">
+				<div className="space-y-2 text-center md:w-[65%] mx-auto">
 					<h1 className="text-4xl font-semibold">
 						Free, disposable email addresses
 					</h1>
@@ -149,7 +149,7 @@ export default function Home() {
 						</>
 					) : (
 						!isPending && (
-							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto">
+							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
 								<Inbox size={64} strokeWidth={1.25} className="w-1/4 md:w-1/5 min-w-1/4" />
 								<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
 									<h2 className="sm:text-xl font-medium">
