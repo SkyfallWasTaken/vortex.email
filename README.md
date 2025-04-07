@@ -1,6 +1,6 @@
 # Vortex
 
-![image](https://cloud-tyy4wckc7-hack-club-bot.vercel.app/0image.png)
+![image](https://hc-cdn.hel1.your-objectstorage.com/s/v3/962be555679cc6025167380389b961a51212731a_prismify-render-1744045541378.png)
 
 **Tired of dealing with a cluttered email inbox?** Vortex has you covered! It’s a simple solution for keeping your primary email clean by providing temporary email addresses. Use them to sign up for newsletters, websites, and services without worrying about spam or unwanted emails.
 
