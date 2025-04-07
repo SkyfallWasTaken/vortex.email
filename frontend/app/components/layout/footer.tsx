@@ -39,7 +39,7 @@ export default function Footer() {
                 </a>{" "}
                 from about {commitAge}.
             </p>
-            <nav className="flex gap-3 mt-4">
+            <nav className="flex gap-4 my-2 sm:hidden">
                 {links.map((link) => (
                     <NavLink
                         key={link.name}
