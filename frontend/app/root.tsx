@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import stylesheet from "~/app.css?url";
 import Header from "~/components/layout/header";
+import Footer from "~/components/layout/footer";
 
 export const links: Route.LinksFunction = () => [
 	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -49,6 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<QueryClientProvider client={queryClient}>
 					<Header />
 					{children}
+					<Footer />
 					<ScrollRestoration />
 					<Scripts />
 				</QueryClientProvider>
