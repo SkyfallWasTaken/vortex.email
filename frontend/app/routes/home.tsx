@@ -39,59 +39,57 @@ export default function Home() {
 	});
 
 	return (
-		<>
-			<div className="my-12 mx-3 md:mx-6">
-				<div className="space-y-2 text-center md:w-[65%] mx-auto">
-					<h1 className="text-4xl font-semibold">
-						Free, disposable email addresses
-					</h1>
-					<p className="text-lg text-text/80">
-						For annoying newsletters, websites, and everything in between!
-						Protect your privacy and avoid spam with temporary email addresses.
-					</p>
+		<div className="my-12 mx-3 md:mx-6">
+			<div className="space-y-2 text-center md:w-[65%] mx-auto">
+				<h1 className="text-4xl font-semibold">
+					Free, disposable email addresses
+				</h1>
+				<p className="text-lg text-text/80">
+					For annoying newsletters, websites, and everything in between!
+					Protect your privacy and avoid spam with temporary email addresses.
+				</p>
+			</div>
+
+			<div className="rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
+				<p className="font-semibold text-lg text-center mb-2">
+					Your email address:
+				</p>
+
+				<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5">
+					{email}
 				</div>
-
-				<div className="rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
-					<p className="font-semibold text-lg text-center mb-2">
-						Your email address:
-					</p>
-
-					<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5">
-						{email}
-					</div>
-					<div className="flex gap-4 text-blue justify-center items-center mt-4">
-						<CopyButton email={email} highlightOnCopy />
-						<GenerateButton />
-					</div>
-				</div>
-
-				<div className="mt-6">
-					{isPending && (
-						<LoaderCircle
-							className="my-8 text-blue animate-spin mx-auto"
-							size={32}
-						/>
-					)}
-					{error && (
-						<p className="text-center py-5 bg-red-500 text-base">
-							Error: {error.message}
-						</p>
-					)}
-					{data && data.length > 0 ? (
-						<div className="w-full md:w-1/2 mx-auto">
-							<Accordion.Root type="multiple" className="mb-4">
-								{data.map((email) => (
-									<Email key={email.email.id} email={email} />
-								))}
-							</Accordion.Root>
-							<ClearAllEmails email={email} />
-						</div>
-					) : (
-						!isPending && <NoEmailsFound email={email} />
-					)}
+				<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4">
+					<CopyButton email={email} highlightOnCopy />
+					<GenerateButton />
 				</div>
 			</div>
-		</>
+
+			<div className="mt-6">
+				{isPending && (
+					<LoaderCircle
+						className="my-8 text-blue animate-spin mx-auto"
+						size={32}
+					/>
+				)}
+				{error && (
+					<p className="text-center py-5 bg-red-500 text-base">
+						Error: {error.message}
+					</p>
+				)}
+				{data && data.length > 0 ? (
+					<div className="w-full md:w-1/2 mx-auto">
+						<Accordion.Root type="multiple" className="mb-4">
+							{data.map((email) => (
+								<Email key={email.email.id} email={email} />
+							))}
+						</Accordion.Root>
+						<ClearAllEmails email={email} />
+					</div>
+				) : (
+					!isPending && <NoEmailsFound email={email} />
+				)}
+			</div>
+		</div>
 	);
 }
 
@@ -104,7 +102,7 @@ function NoEmailsFound({ email }: { email: string }) {
 				className="w-1/4 md:w-1/5 min-w-1/4"
 			/>
 			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-				<h2 className="sm:text-xl font-medium">No emails found for {email}</h2>
+				<h2 className="sm:text-xl font-medium">Waiting for emails...</h2>
 				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
 					Copy your email address and start using it to receive messages
 				</p>
