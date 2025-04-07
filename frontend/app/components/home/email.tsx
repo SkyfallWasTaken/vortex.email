@@ -10,7 +10,7 @@ export default function Email({ email }: { email: EmailType }) {
 	const date = new Date(email.timestamp || Date.now()).toLocaleTimeString();
 
 	const imageSize = 48;
-	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/${imageSize}/h/${imageSize}?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
+	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/256/h/256?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
 
 	return (
 		<Accordion.Item
