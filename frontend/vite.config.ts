@@ -6,28 +6,28 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { execSync } from "child_process";
 
 function getGitCommitHash() {
-  return execSync("git rev-parse --short HEAD").toString().trim();
+	return execSync("git rev-parse --short HEAD").toString().trim();
 }
 
 function getGitCommitLink() {
-  const commitHash = getGitCommitHash();
-  return `https://github.com/SkyfallWasTaken/vortex.email/commit/${commitHash}`;
+	const commitHash = getGitCommitHash();
+	return `https://github.com/SkyfallWasTaken/vortex.email/commit/${commitHash}`;
 }
 
 function getGitCommitTime() {
-  return execSync("git log -1 --format=%ct").toString().trim(); // UNIX timestamp
+	return execSync("git log -1 --format=%ct").toString().trim(); // UNIX timestamp
 }
 
 export default defineConfig({
-  css: {
-    postcss: {
-      plugins: [tailwindcss, autoprefixer],
-    },
-  },
-  plugins: [reactRouter(), tsconfigPaths()],
-  define: {
-    __GIT_COMMIT_HASH__: JSON.stringify(getGitCommitHash()),
-    __GIT_COMMIT_URL__: JSON.stringify(getGitCommitLink()),
-    __GIT_COMMIT_TIME__: JSON.stringify(getGitCommitTime()),
-  },
+	css: {
+		postcss: {
+			plugins: [tailwindcss, autoprefixer],
+		},
+	},
+	plugins: [reactRouter(), tsconfigPaths()],
+	define: {
+		__GIT_COMMIT_HASH__: JSON.stringify(getGitCommitHash()),
+		__GIT_COMMIT_URL__: JSON.stringify(getGitCommitLink()),
+		__GIT_COMMIT_TIME__: JSON.stringify(getGitCommitTime()),
+	},
 });

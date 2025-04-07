@@ -104,16 +104,13 @@ function NoEmailsFound({ email }: { email: string }) {
 				className="w-1/4 md:w-1/5 min-w-1/4"
 			/>
 			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-				<h2 className="sm:text-xl font-medium">
-					No emails found for {email}
-				</h2>
+				<h2 className="sm:text-xl font-medium">No emails found for {email}</h2>
 				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
-					Copy your email address and start using it to receive
-					messages
+					Copy your email address and start using it to receive messages
 				</p>
 			</div>
 		</div>
-	)
+	);
 }
 
 function ClearAllEmails({ email }: { email: string }) {
@@ -135,7 +132,9 @@ function ClearAllEmails({ email }: { email: string }) {
 			>
 				Clear all emails
 			</button>
-			<p className="text-sm text-text/80">This will delete all emails for this address from our servers.</p>
+			<p className="text-sm text-text/80">
+				This will delete all emails for this address from our servers.
+			</p>
 		</div>
 	);
 }

@@ -50,9 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<QueryClientProvider client={queryClient}>
 					<div className="flex flex-col min-h-screen">
 						<Header />
-						<main className="flex-grow">
-							{children}
-						</main>
+						<main className="flex-grow">{children}</main>
 						<Footer />
 					</div>
 					<ScrollRestoration />
