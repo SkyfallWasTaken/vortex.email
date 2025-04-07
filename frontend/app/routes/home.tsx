@@ -26,6 +26,7 @@ export function Email({ email }: { email: EmailType }) {
 	const domain = from?.address?.split("@")[1] || "";
 	const senderName = from?.name || from?.address?.split("@")[0] || "Unknown";
 	const date = new Date(email.timestamp || Date.now()).toLocaleString();
+	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/48/h/48?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
 
 	return (
 		<Accordion.Item
@@ -37,7 +38,7 @@ export function Email({ email }: { email: EmailType }) {
 				<div className="flex flex-col w-full md:hidden gap-2">
 					<div className="flex items-center gap-3">
 						<img
-							src={`https://cdn.brandfetch.io/${domain}/w/48/h/48?c=1idbRLpLjTbVnW5GkCT`}
+							src={brandfetchUrl}
 							width="48"
 							height="48"
 							className="rounded-full bg-blue-200 flex-shrink-0"
@@ -56,7 +57,7 @@ export function Email({ email }: { email: EmailType }) {
 				{/* Desktop: Row layout */}
 				<div className="hidden md:flex md:items-center md:gap-4 w-full">
 					<img
-						src={`https://cdn.brandfetch.io/${domain}/w/48/h/48?c=1idbRLpLjTbVnW5GkCT`}
+						src={brandfetchUrl}
 						width="48"
 						height="48"
 						className="rounded-full bg-blue-200 flex-shrink-0"
