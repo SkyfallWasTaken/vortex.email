@@ -79,50 +79,64 @@ export default function Home() {
 					)}
 					{data && data.length > 0 ? (
 						<div className="w-full md:w-1/2 mx-auto">
-							<Accordion.Root type="multiple">
+							<Accordion.Root type="multiple" className="mb-4">
 								{data.map((email) => (
 									<Email key={email.email.id} email={email} />
 								))}
 							</Accordion.Root>
-							<div className="mb-4" />
-							<button
-								className="text-center border border-surface0 rounded bg-surface0/30 hover:bg-red-500 px-4 py-2 w-full transition duration-350 font-semibold"
-								onClick={async () => {
-									await fetch(
-										`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`,
-										{
-											method: "DELETE",
-										},
-									);
-									queryClient.setQueryData(["emails", email], []);
-								}}
-							>
-								Clear all emails
-							</button>
+							<ClearAllEmails email={email} />
 						</div>
 					) : (
-						!isPending && (
-							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
-								<Inbox
-									size={64}
-									strokeWidth={1.25}
-									className="w-1/4 md:w-1/5 min-w-1/4"
-								/>
-								<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-									<h2 className="sm:text-xl font-medium">
-										No emails found for {email}
-									</h2>
-									<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
-										Copy your email address and start using it to receive
-										messages
-									</p>
-								</div>
-							</div>
-						)
+						!isPending && <NoEmailsFound email={email} />
 					)}
 				</div>
 			</div>
 		</>
+	);
+}
+
+function NoEmailsFound({ email }: { email: string }) {
+	return (
+		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
+			<Inbox
+				size={64}
+				strokeWidth={1.25}
+				className="w-1/4 md:w-1/5 min-w-1/4"
+			/>
+			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
+				<h2 className="sm:text-xl font-medium">
+					No emails found for {email}
+				</h2>
+				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
+					Copy your email address and start using it to receive
+					messages
+				</p>
+			</div>
+		</div>
+	)
+}
+
+function ClearAllEmails({ email }: { email: string }) {
+	const queryClient = useQueryClient();
+
+	return (
+		<div className="flex flex-col gap-3 text-center">
+			<button
+				className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
+				onClick={async () => {
+					await fetch(
+						`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`,
+						{
+							method: "DELETE",
+						},
+					);
+					queryClient.setQueryData(["emails", email], []);
+				}}
+			>
+				Clear all emails
+			</button>
+			<p className="text-sm text-text/80">This will delete all emails for this address from our servers.</p>
+		</div>
 	);
 }
 

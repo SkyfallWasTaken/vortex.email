@@ -15,7 +15,7 @@ export default function Email({ email }: { email: EmailType }) {
     return (
         <Accordion.Item
             value={email.email.id}
-            className="border border-surface1 rounded mb-2 bg-surface0/80 overflow-hidden shadow-sm hover:shadow transition-shadow duration-200"
+            className="border border-surface0 bg-surface0/30 hover:bg-surface0/80 rounded mb-2 overflow-hidden shadow-sm hover:shadow transition duration-200"
         >
             <Accordion.Trigger className="flex w-full text-left py-4 px-5">
                 <div className="flex items-center gap-4 w-full">
