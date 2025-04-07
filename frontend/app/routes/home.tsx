@@ -22,21 +22,59 @@ export function meta() {
 }
 
 export function Email({ email }: { email: EmailType }) {
-	const { html, text, subject, from } = extract(email.data);
+	const { html, text, subject, from } = extract(email.email.data);
+	const domain = from?.address?.split("@")[1] || "";
+	const senderName = from?.name || from?.address?.split("@")[0] || "Unknown";
+	const date = new Date(email.timestamp || Date.now()).toLocaleString();
 
 	return (
 		<Accordion.Item
-			value={email.id}
-			className="border border-surface1 rounded mb-2 bg-surface0 overflow-hidden" // Added border, rounding, margin, background, and overflow hidden
+			value={email.email.id}
+			className="border border-surface1 rounded mb-2 bg-surface0 overflow-hidden shadow-sm hover:shadow transition-shadow duration-200"
 		>
-			<Accordion.Trigger className="flex flex-col md:flex-row md:text-lg py-2 px-6 w-full text-left md:gap-4"> {/* Removed border-b */}
-				<span className="truncate font-semibold">
-					{from?.name || from?.address || "Unknown"}
-				</span>
-				<span className="truncate">{subject || "No subject"}</span>
+			<Accordion.Trigger className="flex w-full text-left py-4 px-5">
+				{/* Mobile: Column layout */}
+				<div className="flex flex-col w-full md:hidden gap-2">
+					<div className="flex items-center gap-3">
+						<img
+							src={`https://cdn.brandfetch.io/${domain}/w/48/h/48?c=1idbRLpLjTbVnW5GkCT`}
+							width="48"
+							height="48"
+							className="rounded-full bg-blue-200 flex-shrink-0"
+							alt=""
+						/>
+						<span className="font-medium text-lg truncate">{senderName}</span>
+					</div>
+					<div className="pl-[60px]">
+						<p className="truncate text-[15px] text-gray-700 dark:text-gray-300">
+							{subject || "No subject"}
+						</p>
+						<p className="text-xs text-gray-500 mt-1">{date}</p>
+					</div>
+				</div>
+
+				{/* Desktop: Row layout */}
+				<div className="hidden md:flex md:items-center md:gap-4 w-full">
+					<img
+						src={`https://cdn.brandfetch.io/${domain}/w/48/h/48?c=1idbRLpLjTbVnW5GkCT`}
+						width="48"
+						height="48"
+						className="rounded-full bg-blue-200 flex-shrink-0"
+						alt=""
+					/>
+					<div className="flex-grow min-w-0">
+						<div className="flex justify-between items-center">
+							<span className="font-medium truncate">{senderName}</span>
+							<span className="text-xs text-gray-500">{date}</span>
+						</div>
+						<p className="truncate text-[14px] text-gray-700 dark:text-gray-300">
+							{subject || "No subject"}
+						</p>
+					</div>
+				</div>
 			</Accordion.Trigger>
 			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden">
-				<div className="bg-white dark:bg-black text-black dark:text-white text-[15px] p-4">
+				<div className="bg-white dark:bg-black text-black dark:text-white text-[15px] p-4 border-t border-surface1">
 					<Letter
 						html={html || text || ""}
 						text={text}
@@ -122,14 +160,14 @@ export default function Home() {
 				<div className="flex gap-2 justify-center items-center w-full md:w-1/2 mx-auto mb-2.5 mt-6">
 					<input
 						type="text"
-						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
+						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full border border-surface1 focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
 						placeholder="Enter your email address"
 						value={username}
 						onChange={(e) => setUsername(e.target.value)}
 					/>
 					<select
 						name="email-domain"
-						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full focus:border-none focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
+						className="h-12 shadow-sm bg-surface0 mx-auto p-4 w-full border border-surface1 focus:outline-none focus:ring-[1px] focus:ring-mauve rounded"
 						value={emailDomain}
 						onChange={(e) => setEmailDomain(e.target.value)}
 					>
@@ -177,18 +215,19 @@ export default function Home() {
 					{data && data.length > 0 ? (
 						<>
 							<div className="w-full md:w-1/2 mx-auto">
-								<Accordion.Root
-									type="multiple"
-								>
+								<Accordion.Root type="multiple">
 									{data.map((email) => (
-										<Email key={email.id} email={email} />
+										<Email key={email.email.id} email={email} />
 									))}
 								</Accordion.Root>
 								<div className="mb-4" />
 								<button
-									className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-100 font-semibold"
+									className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
 									onClick={async () => {
-										queryClient.setQueryData(["emails", debouncedUsername, emailDomain], []);
+										queryClient.setQueryData(
+											["emails", debouncedUsername, emailDomain],
+											[],
+										);
 										await fetch(
 											`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}/clear`,
 											{
@@ -201,18 +240,20 @@ export default function Home() {
 								</button>
 							</div>
 						</>
-					) : (!isPending && (
-						<div className="flex bg-mauve text-base items-center justify-center flex-col text-center py-5 rounded shadow-sm">
-							<Inbox size={42} strokeWidth={1.5} className="mb-2" />
-							<h2 className="text-xl">
-								No emails found for {debouncedUsername}@{emailDomain}
-							</h2>
-							<p className="mb-2.5">
-								Copy your email address and start using it to receive messages
-							</p>
-							<CopyButton username={username} emailDomain={emailDomain} />
-						</div>
-					))}
+					) : (
+						!isPending && (
+							<div className="flex bg-mauve text-base items-center justify-center flex-col text-center py-5 rounded shadow-sm">
+								<Inbox size={42} strokeWidth={1.5} className="mb-2" />
+								<h2 className="text-xl">
+									No emails found for {debouncedUsername}@{emailDomain}
+								</h2>
+								<p className="mb-2.5">
+									Copy your email address and start using it to receive messages
+								</p>
+								<CopyButton username={username} emailDomain={emailDomain} />
+							</div>
+						)
+					)}
 				</div>
 			</div>
 		</>

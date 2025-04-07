@@ -15,6 +15,7 @@ use color_eyre::{
 };
 use dashmap::DashMap;
 use email_address_parser::EmailAddress;
+use serde::Serialize;
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::cors::CorsLayer;
 use tracing::Level;
@@ -25,7 +26,12 @@ use vortex_smtp::{event::Event, Email};
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:2525";
 
-type EmailsMap = DashMap<String, Vec<Email>>;
+#[derive(Clone, Debug, Serialize)]
+struct ExtendedEmail {
+    email: Email,
+    timestamp: String,
+}
+type EmailsMap = DashMap<String, Vec<ExtendedEmail>>;
 
 async fn flatten<T, E: ToString>(handle: JoinHandle<Result<T, E>>) -> Result<T, String> {
     match handle.await {
@@ -65,7 +71,10 @@ async fn server_main() -> Result<()> {
                     let keys = email.rcpt_to.clone();
                     for key in keys {
                         let mut emails = emails_map.get_mut(&key).unwrap();
-                        emails.push(email.clone());
+                        emails.push(ExtendedEmail {
+                            email: email.clone(),
+                            timestamp: chrono::Utc::now().to_rfc3339(),
+                        });
                     }
                 }
             },
@@ -110,7 +119,7 @@ async fn get_emails(
     Path(email): Path<String>,
     Extension(emails_map): Extension<Arc<EmailsMap>>,
     Extension(email_domains): Extension<Arc<Vec<String>>>,
-) -> (StatusCode, Json<Vec<Email>>) {
+) -> (StatusCode, Json<Vec<ExtendedEmail>>) {
     let emails_map = emails_map.as_ref();
 
     if validate_vortex_email(&email, &email_domains) {
@@ -131,7 +140,7 @@ async fn clear_emails(
     Path(email): Path<String>,
     Extension(emails_map): Extension<Arc<EmailsMap>>,
     Extension(email_domains): Extension<Arc<Vec<String>>>,
-) -> (StatusCode, Json<Vec<Email>>) {
+) -> (StatusCode, Json<Vec<ExtendedEmail>>) {
     let emails_map = emails_map.as_ref();
 
     if validate_vortex_email(&email, &email_domains) {
