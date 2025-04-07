@@ -204,15 +204,15 @@ export default function Home() {
 								<button
 									className="text-center border border-surface0 rounded bg-surface0/30 hover:bg-red-500 px-4 py-2 w-full transition duration-350 font-semibold"
 									onClick={async () => {
-										queryClient.setQueryData(
-											["emails", debouncedUsername, emailDomain],
-											[],
-										);
 										await fetch(
 											`${import.meta.env.VITE_API_ENDPOINT}/emails/${debouncedUsername}@${emailDomain}/clear`,
 											{
 												method: "DELETE",
 											},
+										);
+										queryClient.setQueryData(
+											["emails", debouncedUsername, emailDomain],
+											[],
 										);
 									}}
 								>
