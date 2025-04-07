@@ -18,7 +18,7 @@ export default function Footer() {
     const commitAge = timeAgo(commitTime);
 
     return (
-        <div className="text-text/50 text-sm text-center mt-8 mb-4">
+        <div className="text-text/50 text-sm text-center py-4 mt-auto">
             <p>
                 Running on build{" "}
                 <a href={commitUrl} target="_blank" className="underline">{commitHash}</a>{" "}
