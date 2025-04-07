@@ -3,7 +3,7 @@ import { Copy, CopyCheck, Inbox, LoaderCircle, RefreshCcw } from "lucide-react";
 import * as Accordion from "@radix-ui/react-accordion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@uidotdev/usehooks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Email from "~/components/home/email";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
@@ -94,15 +94,27 @@ export default function Home() {
 }
 
 function NoEmailsFound({ email }: { email: string }) {
+	const [dots, setDots] = useState(".")
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setDots(dots.length < 3 ? dots + "." : "")
+		}, 500)
+		return () => clearInterval(interval)
+	}, [dots])
+
 	return (
 		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
 			<Inbox
 				size={64}
 				strokeWidth={1.25}
-				className="w-1/4 md:w-1/5 min-w-1/4"
+				className="w-1/4 md:w-1/5 min-w-1/4 animate-pulse"
 			/>
 			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-				<h2 className="sm:text-xl font-medium">Waiting for emails...</h2>
+				<h2 className="sm:text-xl font-medium flex items-end space-x-2">
+					<span>Waiting for emails{dots}</span>
+				</h2>
+
+
 				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
 					Copy your email address and start using it to receive messages
 				</p>
