@@ -25,4 +25,4 @@ jobs:
         run: bun run check
 
       - name: Run build
-        run: bun run build
+        run: VITE_EMAIL_DOMAINS=localhost bun run build

@@ -49,14 +49,14 @@ jobs:
           SERVER_PID=$!
           echo "Server running in background with PID $SERVER_PID"
 
-          # Wait for port 25 to be open
-          while ! nc -z 127.0.0.1 25; do
-            echo "Waiting for port 25 to be open..."
+          # Wait for port 2525 to be open
+          while ! nc -z 127.0.0.1 2525; do
+            echo "Waiting for port 2525 to be open..."
             sleep 1
           done
-          echo "Port 25 is open"
+          echo "Port 2525 is open"
 
-          perl Copyleft/smtp-fuzz.pl 127.0.0.1 25 &
+          perl Copyleft/smtp-fuzz.pl 127.0.0.1 2525 &
           FUZZ_PID=$!
           echo "smtp-fuzz.pl running in background with PID $FUZZ_PID"
 
