@@ -6,7 +6,7 @@ import { useLocalStorage } from "@uidotdev/usehooks";
 import { useState } from "react";
 
 import Email from "~/components/home/email";
-import { getRandomEmail, type Email as EmailType } from "~/utils/main";
+import { type Email as EmailType, getRandomEmail } from "~/utils/main";
 
 export function meta() {
 	return [
@@ -22,7 +22,7 @@ export function meta() {
 export default function Home() {
 	const [email] = useLocalStorage("email", getRandomEmail());
 
-	const queryClient = useQueryClient();
+	const _queryClient = useQueryClient();
 	const { isPending, error, data } = useQuery<EmailType[]>({
 		queryKey: ["emails", email],
 		queryFn: () => {
@@ -119,6 +119,7 @@ function ClearAllEmails({ email }: { email: string }) {
 	return (
 		<div className="flex flex-col gap-3 text-center">
 			<button
+				type="button"
 				className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
 				onClick={async () => {
 					await fetch(

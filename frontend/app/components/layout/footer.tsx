@@ -21,7 +21,12 @@ export default function Footer() {
 		<div className="text-text/50 text-sm text-center py-4 mt-auto">
 			<p>
 				Running on build{" "}
-				<a href={commitUrl} target="_blank" className="underline">
+				<a
+					href={commitUrl}
+					target="_blank"
+					className="underline"
+					rel="noreferrer"
+				>
 					{commitHash}
 				</a>{" "}
 				from about {commitAge}.

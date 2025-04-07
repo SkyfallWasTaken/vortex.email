@@ -1,9 +1,9 @@
+import { execSync } from "node:child_process";
 import { reactRouter } from "@react-router/dev/vite";
 import autoprefixer from "autoprefixer";
 import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { execSync } from "child_process";
 
 function getGitCommitHash() {
 	return execSync("git rev-parse --short HEAD").toString().trim();
