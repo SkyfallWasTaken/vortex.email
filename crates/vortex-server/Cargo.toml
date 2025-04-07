@@ -14,7 +14,6 @@ tower-http = { version = "0.6", features = ["cors"] }
 tracing = "0.1.40"
 vortex-smtp = { path = "../vortex-smtp" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tracing-appender = "0.2.3"
 chrono = "0.4.40"
 serde = { version = "1.0.219", features = ["derive"] }
 
