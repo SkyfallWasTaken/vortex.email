@@ -1,13 +1,12 @@
 import type { Email as EmailType } from "../email";
+import Email from "~/components/home/email";
 
-import { extract } from "letterparser";
 import { Copy, CopyCheck, Inbox, LoaderCircle, RefreshCcw } from "lucide-react";
-import { Letter } from "react-letter";
 
 import { fakerEN as faker } from "@faker-js/faker";
 import * as Accordion from "@radix-ui/react-accordion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebounce, useLocalStorage } from "@uidotdev/usehooks";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { useState } from "react";
 
 export function meta() {
@@ -19,51 +18,6 @@ export function meta() {
 				"Free, disposable email addresses for annoying newsletters, websites, and everything in between! Protect your privacy and avoid spam with temporary email addresses.",
 		},
 	];
-}
-
-export function Email({ email }: { email: EmailType }) {
-	const { html, text, subject, from } = extract(email.email.data);
-	const domain = from?.address?.split("@")[1] || "";
-	const senderName = from?.name || from?.address?.split("@")[0] || "Unknown";
-	const date = new Date(email.timestamp || Date.now()).toLocaleTimeString();
-	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/48/h/48?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
-
-	return (
-		<Accordion.Item
-			value={email.email.id}
-			className="border border-surface1 rounded mb-2 bg-surface0 overflow-hidden shadow-sm hover:shadow transition-shadow duration-200"
-		>
-			<Accordion.Trigger className="flex w-full text-left py-4 px-5">
-				<div className=" flex items-center gap-4 w-full">
-					<img
-						src={brandfetchUrl}
-						width="48"
-						height="48"
-						className="rounded-full bg-blue-200 flex-shrink-0"
-						alt=""
-					/>
-					<div className="flex-grow min-w-0">
-						<div className="flex justify-between items-center">
-							<span className="font-medium truncate">{senderName}</span>
-							<span className="text-xs text-gray-500 hidden sm:block">{date}</span>
-						</div>
-						<p className="truncate text-[14px] text-gray-700 dark:text-gray-300">
-							{subject || "No subject"}
-						</p>
-					</div>
-				</div>
-			</Accordion.Trigger>
-			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden">
-				<div className="bg-white dark:bg-black text-black dark:text-white text-[15px] p-4 border-t border-surface1">
-					<Letter
-						html={html || text || ""}
-						text={text}
-						rewriteExternalResources={(url) => `https://wsrv.nl/?url=${url}`}
-					/>
-				</div>
-			</Accordion.Content>
-		</Accordion.Item>
-	);
 }
 
 function CopyButton({
@@ -105,51 +59,52 @@ export default function Home() {
 	const { isPending, error, data } = useQuery<EmailType[]>({
 		queryKey: ["emails", email],
 		queryFn: () => {
-
 			return fetch(
 				`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`,
 			).then((res) => (res.json() as Promise<EmailType[]>)).then((emails) => emails.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
 		},
-		refetchInterval: 7000,
+		refetchInterval: 5000,
 	});
 
 	return (
 		<>
-			<div className="mt-12 mb-9 mx-3 md:mx-6">
+			<div className="my-12 mx-3 md:mx-6">
 				<div className="space-y-2 text-center w-[80%] md:w-2/3 mx-auto">
-					<h1 className="text-4xl md:text-6xl font-bold">
+					<h1 className="text-4xl font-semibold">
 						Free, disposable email addresses
 					</h1>
-					<p className="text-xl">
+					<p className="text-lg text-text/80">
 						For annoying newsletters, websites, and everything in between!
 						Protect your privacy and avoid spam with temporary email addresses.
 					</p>
 				</div>
 
-				<p className="font-semibold text-lg text-center mb-2 mt-6">
-					Your email address:
-				</p>
+				<div className="bg-mantle rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
+					<p className="font-semibold text-lg text-center mb-2">
+						Your email address:
+					</p>
 
-				<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded w-full md:w-1/2 mx-auto mb-2.5">
-					{email}
-				</div>
-				<div className="flex gap-4 text-blue justify-center items-center md:w-1/3 mx-auto">
-					<CopyButton
-						email={email}
-						highlightOnCopy
-					/>
-					<button
-						type="button"
-						className="flex items-center space-x-2"
-						onClick={() => {
-							const newEmail = getRandomEmail();
-							queryClient.setQueryData(["emails", newEmail], []);
-							setEmail(newEmail);
-						}}
-					>
-						<RefreshCcw size={16} />
-						<span>Generate new email</span>
-					</button>
+					<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5">
+						{email}
+					</div>
+					<div className="flex gap-4 text-blue justify-center items-center mt-4">
+						<CopyButton
+							email={email}
+							highlightOnCopy
+						/>
+						<button
+							type="button"
+							className="flex items-center space-x-2"
+							onClick={() => {
+								const newEmail = getRandomEmail();
+								queryClient.setQueryData(["emails", newEmail], []);
+								setEmail(newEmail);
+							}}
+						>
+							<RefreshCcw size={16} />
+							<span>Generate new email</span>
+						</button>
+					</div>
 				</div>
 
 				<div className="mt-6">
@@ -194,13 +149,13 @@ export default function Home() {
 						</>
 					) : (
 						!isPending && (
-							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto mb-2.5">
+							<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto">
 								<Inbox size={64} strokeWidth={1.25} className="w-1/4 md:w-1/5 min-w-1/4" />
 								<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-									<h2 className="text-xl font-medium">
+									<h2 className="sm:text-xl font-medium">
 										No emails found for {email}
 									</h2>
-									<p>
+									<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
 										Copy your email address and start using it to receive messages
 									</p>
 								</div>
