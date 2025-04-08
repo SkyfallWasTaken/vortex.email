@@ -30,7 +30,8 @@ export default function Home() {
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
-			const storedEmail = localStorage.getItem("email");
+			// Older versions of Vortex JSON.stringify'd the email, so we need to remove the quotes
+			const storedEmail = localStorage.getItem("email")?.replaceAll('"', "");
 			if (storedEmail) {
 				setEmail(storedEmail);
 			} else {
