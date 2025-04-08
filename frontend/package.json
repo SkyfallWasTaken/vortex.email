@@ -12,7 +12,7 @@
 		"format": "biome format --write"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^9.6.0",
+		"@ngneat/falso": "^7.3.0",
 		"@radix-ui/react-accordion": "^1.2.3",
 		"@react-router/node": "^7.5.0",
 		"@react-router/serve": "^7.5.0",
