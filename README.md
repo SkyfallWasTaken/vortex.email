@@ -1,10 +1,10 @@
 # Vortex
 
-![image](https://hc-cdn.hel1.your-objectstorage.com/s/v3/962be555679cc6025167380389b961a51212731a_prismify-render-1744045541378.png)
+![image](https://hc-cdn.hel1.your-objectstorage.com/s/v3/678d11449bb79ac1df1e1bc96c0819a684c3dea7_image.png)
 
-**Tired of dealing with a cluttered email inbox?** Vortex has you covered! It’s a simple solution for keeping your primary email clean by providing temporary email addresses. Use them to sign up for newsletters, websites, and services without worrying about spam or unwanted emails.
+**Tired of dealing with a cluttered email inbox?** Vortex has you covered. It’s a simple solution for keeping your primary email clean by providing temporary email addresses - use them to sign up for newsletters, websites, and services without worrying about spam or unwanted emails!
 
-**Try it out at <https://vortex.skyfall.dev>,** where you’ll find over 10 (sub)domains to choose from!
+**Try it out at <https://vortex.skyfall.dev>,** where you’ll find over 10 (sub)domains to choose from.
 
 ## Why Vortex?
 
@@ -12,7 +12,7 @@
 - Protect your primary email from spam and unwanted newsletters
 - Ideal for one-time signups and temporary accounts _(looking at you, Quora)_
 
-## Building
+## Development
 
 You will need:
 
@@ -20,10 +20,7 @@ You will need:
 - Bun
 - Node.js (to actually run the project)
 
-Additionally, if you want to run the server, we recommend:
-
-- Docker
-- Caddy
+It's also recommended to install Docker so you can run the SMTP server.
 
 ### Building the SMTP server
 
@@ -53,15 +50,16 @@ Ensure you've built everything first.
 In one terminal, run:
 
 ```bash
-RUST_LOG=debug cargo run
+RUST_LOG=debug FRONTEND_DOMAIN=localhost cargo run
 ```
 
-Ensure you have permissions to bind to port 25.
+By default, the SMTP server will listen on **port 2525**, so that you don't need to run it as root whilst developing.
 
-In another, run:
+In another terminal, run:
 
 ```bash
 cd frontend
+bun install
 bun dev
 ```
 
@@ -91,4 +89,18 @@ And finally, this Caddy reverse proxy command:
 caddy reverse-proxy --from <your api domain> --to :3000
 ```
 
+---
+
+#### License
+
+<sup>
+Licensed under the <a href="LICENSE.md">GNU Affero General Public License v3.0</a>.
+</sup>
+
 <br>
+
+<sub>
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this application by you, as defined in the GNU Affero General Public License v3.0, shall
+be licensed as above, without any additional terms or conditions.
+</sub>
