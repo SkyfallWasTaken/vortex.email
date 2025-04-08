@@ -9,6 +9,7 @@ export default {
 	content: ["./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}"],
 	theme: {
 		extend: {
+			// @ts-expect-error
 			typography: (theme) => ({
 				DEFAULT: {
 					css: {
