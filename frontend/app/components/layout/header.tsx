@@ -1,13 +1,8 @@
 import { SiGithub, SiX } from "react-icons/si";
 import { Link, NavLink } from "react-router";
 
-const links = [
-	{ name: "Home", to: "/" },
-	{ name: "Credits", to: "/credits" },
-	{ name: "Support the project", to: "/support-the-project" },
-	{ name: "Privacy ", to: "/privacy" },
-	{ name: "Contact", to: "https://skyfall.dev/contact" },
-];
+import links from "~/utils/links";
+
 export default function Header() {
 	return (
 		<header className="flex items-center justify-between py-4 px-5 md:px-8 border-b border-surface0">
@@ -21,10 +16,9 @@ export default function Header() {
 							key={link.name}
 							to={link.to}
 							className={({ isActive, isPending }) =>
-								`hover:text-blue transition ${
-									isActive || isPending
-										? "text-blue font-medium"
-										: "text-text/80"
+								`hover:text-blue transition ${isActive || isPending
+									? "text-blue font-medium"
+									: "text-text/80"
 								}`
 							}
 						>

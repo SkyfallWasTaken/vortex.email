@@ -1,10 +1,5 @@
 import { NavLink } from "react-router";
-
-const links = [
-	{ name: "Home", to: "/" },
-	{ name: "Credits", to: "/credits" },
-	{ name: "Support the project", to: "/support-the-project" },
-];
+import links from "~/utils/links";
 
 export default function Footer() {
 	const commitHash = __GIT_COMMIT_HASH__;
@@ -45,8 +40,7 @@ export default function Footer() {
 						key={link.name}
 						to={link.to}
 						className={({ isActive }) =>
-							`hover:text-blue transition ${
-								isActive ? "text-blue font-medium" : "text-text/80"
+							`hover:text-blue transition ${isActive ? "text-blue font-medium" : "text-text/80"
 							}`
 						}
 					>
