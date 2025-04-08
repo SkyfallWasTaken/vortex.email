@@ -30,6 +30,7 @@ export default function Header() {
 			<div className="flex items-center gap-4">
 				<a
 					href="https://github.com/SkyfallWasTaken/vortex.email"
+					aria-label="GitHub repository"
 					target="_blank"
 					rel="noreferrer"
 					className="hover:text-blue transition"
@@ -38,6 +39,7 @@ export default function Header() {
 				</a>
 				<a
 					href="https://x.com/skyfall_ggs"
+					aria-label="Follow us on X"
 					target="_blank"
 					rel="noreferrer"
 					className="hover:text-blue transition"
