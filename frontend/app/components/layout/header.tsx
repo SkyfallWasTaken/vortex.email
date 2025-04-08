@@ -18,9 +18,9 @@ export default function Header() {
 						<NavLink
 							key={link.name}
 							to={link.to}
-							className={({ isActive }) =>
+							className={({ isActive, isPending }) =>
 								`hover:text-blue transition ${
-									isActive ? "text-blue font-medium" : "text-text/80"
+									(isActive || isPending) ? "text-blue font-medium" : "text-text/80"
 								}`
 							}
 						>
