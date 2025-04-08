@@ -32,7 +32,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ["react-icons"],
+      external: ["react-icons/lu"],
     },
+  },
+  optimizeDeps: {
+    include: ["react-icons/lu"],
   },
 });
