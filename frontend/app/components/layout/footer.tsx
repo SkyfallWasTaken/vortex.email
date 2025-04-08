@@ -21,7 +21,7 @@ export default function Footer() {
 	const commitAge = timeAgo(commitTime);
 
 	return (
-		<div className="text-text/50 text-sm flex flex-col items-center py-4 mt-auto">
+		<div className="text-text/50 text-xs flex flex-col items-center py-4 mt-auto">
 			<p>
 				Running on build{" "}
 				<a
@@ -34,7 +34,7 @@ export default function Footer() {
 				</a>{" "}
 				from about {commitAge}.
 			</p>
-			<nav className="flex gap-4 my-2 sm:hidden">
+			<nav className="flex gap-4 my-2 text-xs sm:hidden">
 				{links.map((link) => (
 					<NavLink
 						key={link.name}

@@ -151,18 +151,18 @@ function NoEmailsFound() {
 	}, [dots]);
 
 	return (
-		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 h-32 rounded w-full md:w-1/2 mx-auto">
+		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto">
 			<LuInbox
 				size={64}
 				strokeWidth={1.25}
 				className="w-1/4 md:w-1/5 min-w-1/4 animate-pulse"
 			/>
 			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-				<h2 className="sm:text-xl font-medium flex items-end space-x-2">
+				<h2 className="text-xl font-medium flex items-end space-x-2">
 					<span>Waiting for emails{dots}</span>
 				</h2>
 
-				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
+				<p className="text-base text-text/80">
 					Copy your email address and start using it to receive messages
 				</p>
 			</div>
