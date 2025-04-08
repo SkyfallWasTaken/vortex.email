@@ -30,9 +30,4 @@ export default defineConfig({
     __GIT_COMMIT_URL__: JSON.stringify(getGitCommitLink()),
     __GIT_COMMIT_TIME__: JSON.stringify(getGitCommitTime()),
   },
-  build: {
-    rollupOptions: {
-      external: ["react-icons/lu", "react-icons/si"],
-    },
-  },
 });
