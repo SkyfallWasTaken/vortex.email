@@ -39,14 +39,14 @@ export default function Home() {
 	});
 
 	return (
-		<div className="my-12 mx-3 md:mx-6">
+		<div className="my-12 mx-4 md:mx-6">
 			<div className="space-y-2 text-center md:w-[65%] mx-auto">
 				<h1 className="text-4xl font-semibold">
 					Free, disposable email addresses
 				</h1>
 				<p className="text-lg text-text/80">
-					For annoying newsletters, websites, and everything in between!
-					Protect your privacy and avoid spam with temporary email addresses.
+					For annoying newsletters, websites, and everything in between! Protect
+					your privacy and avoid spam with temporary email addresses.
 				</p>
 			</div>
 
@@ -86,21 +86,22 @@ export default function Home() {
 						<ClearAllEmails email={email} />
 					</div>
 				) : (
-					!isPending && <NoEmailsFound email={email} />
+					!isPending && <NoEmailsFound />
 				)}
 			</div>
 		</div>
 	);
 }
 
-function NoEmailsFound({ email }: { email: string }) {
-	const [dots, setDots] = useState(".")
+function NoEmailsFound() {
+	const [dots, setDots] = useState(".");
 	useEffect(() => {
 		const interval = setInterval(() => {
-			setDots(dots.length < 3 ? dots + "." : "")
-		}, 500)
-		return () => clearInterval(interval)
-	}, [dots])
+			// biome-ignore lint/style/useTemplate: just makes things harder to read
+			setDots(dots.length < 3 ? dots + "." : "");
+		}, 500);
+		return () => clearInterval(interval);
+	}, [dots]);
 
 	return (
 		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
@@ -113,7 +114,6 @@ function NoEmailsFound({ email }: { email: string }) {
 				<h2 className="sm:text-xl font-medium flex items-end space-x-2">
 					<span>Waiting for emails{dots}</span>
 				</h2>
-
 
 				<p className="text-sm sm:text-base sm:text-text/80 text-text/80">
 					Copy your email address and start using it to receive messages
