@@ -83,7 +83,7 @@ export default function Home() {
 				</p>
 			</div>
 
-			<div className="rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
+			<div className="rounded border border-surface0 px-4 sm:px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
 				<p className="font-semibold text-lg text-center mb-2">
 					Your email address:
 				</p>
