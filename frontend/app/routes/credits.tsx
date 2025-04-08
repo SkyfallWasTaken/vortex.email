@@ -6,7 +6,7 @@ export default function Credits() {
 				Thank you to all the people who helped make this project possible!
 			</p>
 
-			<ul className="list-disc">
+			<ul>
 				<li>
 					<a
 						href="https://pixelverse.tech/"

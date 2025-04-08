@@ -40,7 +40,8 @@ export default function Footer() {
 						key={link.name}
 						to={link.to}
 						className={({ isActive }) =>
-							`hover:text-blue transition ${isActive ? "text-blue font-medium" : "text-text/80"
+							`hover:text-blue transition ${
+								isActive ? "text-blue font-medium" : "text-text/80"
 							}`
 						}
 					>
