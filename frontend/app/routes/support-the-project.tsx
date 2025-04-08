@@ -32,6 +32,8 @@ export default function Donate() {
 					src={KofiButton}
 					alt="Ko-Fi button"
 					className="w-full mb-4 sm:w-1/2 cursor-pointer hover:opacity-80 transition"
+					width="980"
+					height="198"
 				/>
 			</a>
 			<p>
