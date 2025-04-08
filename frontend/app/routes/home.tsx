@@ -63,47 +63,7 @@ export default function Home() {
 		enabled: !!email, // Only run the query when email is not null
 	});
 
-	if (email === null) {
-		return (
-			<div className="my-12 mx-4 md:mx-6">
-				<div className="space-y-2 text-center md:w-[65%] mx-auto">
-					<h1 className="text-4xl font-semibold">
-						Free, disposable email addresses
-					</h1>
-					<p className="text-lg text-text/80">
-						For annoying newsletters, websites, and everything in between!
-						Protect your privacy and avoid spam with temporary email addresses.
-					</p>
-				</div>
-				<div className="rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
-					<p className="font-semibold text-lg text-center mb-2">
-						Your email address:
-					</p>
-					<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5 animate-pulse">
-						Loading...
-					</div>
-					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4 opacity-50 pointer-events-none">
-						{/* Disabled buttons */}
-						<button type="button" className="flex items-center space-x-2">
-							<Copy size={16} />
-							<span>Copy email</span>
-						</button>
-						<button type="button" className="flex items-center space-x-2">
-							<RefreshCcw size={16} />
-							<span>Generate new email</span>
-						</button>
-					</div>
-				</div>
-				<div className="mt-6">
-					<LoaderCircle
-						className="my-8 text-blue animate-spin mx-auto"
-						size={32}
-					/>
-				</div>
-			</div>
-		);
-	}
-
+	// Render the main layout, conditionally rendering content based on loading state
 	return (
 		<div className="my-12 mx-4 md:mx-6">
 			<div className="space-y-2 text-center md:w-[65%] mx-auto">
@@ -120,39 +80,53 @@ export default function Home() {
 				<p className="font-semibold text-lg text-center mb-2">
 					Your email address:
 				</p>
-
-				<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5">
-					{email}
-				</div>
-				<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4">
-					<CopyButton email={email} highlightOnCopy />
-					<GenerateButton updateEmail={updateEmail} />
-				</div>
+				{/* Conditional rendering for email display */}
+				{email === null ? (
+					<>
+						<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5 animate-pulse">
+							loading...
+						</div>
+						<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4 opacity-50 pointer-events-none">
+							<CopyButtonDisplay />
+							<GenerateButtonDisplay />
+						</div>
+					</>
+				) : (
+					<>
+						<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5">
+							{email}
+						</div>
+						<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4">
+							<CopyButton email={email} highlightOnCopy />
+							<GenerateButton updateEmail={updateEmail} />
+						</div>
+					</>
+				)}
 			</div>
 
+			{/* Conditional rendering for email list section */}
 			<div className="mt-6">
-				{isPending && (
+				{email === null || (isPending && !data) ? ( // Show loader if email is null OR initial fetch is pending
 					<LoaderCircle
-						className="my-8 text-blue animate-spin mx-auto"
-						size={32}
+						className="h-32 text-blue animate-spin mx-auto"
+						size={48}
 					/>
-				)}
-				{error && (
+				) : error ? (
 					<p className="text-center py-5 bg-red-500 text-base">
 						Error: {error.message}
 					</p>
-				)}
-				{data && data.length > 0 ? (
+				) : data && data.length > 0 ? (
 					<div className="w-full md:w-1/2 mx-auto">
 						<Accordion.Root type="multiple" className="mb-4">
-							{data.map((email) => (
-								<Email key={email.email.id} email={email} />
+							{data.map((emailData) => (
+								<Email key={emailData.email.id} email={emailData} />
 							))}
 						</Accordion.Root>
-						<ClearAllEmails email={email} />
+						{/* Ensure email is not null before passing to ClearAllEmails */}
+						{email && <ClearAllEmails email={email} />}
 					</div>
 				) : (
-					!isPending && data && data.length === 0 && <NoEmailsFound />
+					<NoEmailsFound /> // Show if not loading, no error, and data is empty
 				)}
 			</div>
 		</div>
@@ -170,7 +144,7 @@ function NoEmailsFound() {
 	}, [dots]);
 
 	return (
-		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
+		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 h-32 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
 			<Inbox
 				size={64}
 				strokeWidth={1.25}
@@ -190,8 +164,8 @@ function NoEmailsFound() {
 }
 
 function ClearAllEmails({ email }: { email: string }) {
+	// email prop is guaranteed non-null here by parent logic
 	const queryClient = useQueryClient();
-	if (!email) return null;
 
 	return (
 		<div className="flex flex-col gap-3 text-center">
@@ -229,7 +203,6 @@ function CopyButton({
 	return (
 		<button
 			type="button"
-			className={`flex items-center space-x-2 ${copied && highlightOnCopy ? "text-green" : ""}`}
 			onClick={() => {
 				navigator.clipboard.writeText(email);
 				setCopied(true);
@@ -238,21 +211,38 @@ function CopyButton({
 				}, 1000);
 			}}
 		>
+			<CopyButtonDisplay copied={copied} highlightOnCopy={highlightOnCopy} />
+		</button>
+	);
+}
+
+function CopyButtonDisplay({
+	copied = false,
+	highlightOnCopy = false,
+}: { copied?: boolean; highlightOnCopy?: boolean }) {
+	return (
+		<div
+			className={`flex items-center space-x-2 ${copied && highlightOnCopy ? "text-green" : ""}`}
+		>
 			{copied ? <CopyCheck size={16} /> : <Copy size={16} />}
 			<span>{copied ? "Copied!" : "Copy email"}</span>
-		</button>
+		</div>
 	);
 }
 
 function GenerateButton({ updateEmail }: { updateEmail: () => void }) {
 	return (
-		<button
-			type="button"
-			className="flex items-center space-x-2"
-			onClick={updateEmail}
-		>
+		<button type="button" onClick={updateEmail}>
+			<GenerateButtonDisplay />
+		</button>
+	);
+}
+
+function GenerateButtonDisplay() {
+	return (
+		<div className="flex items-center space-x-2">
 			<RefreshCcw size={16} />
 			<span>Generate new email</span>
-		</button>
+		</div>
 	);
 }
