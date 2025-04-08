@@ -1,4 +1,4 @@
-import { Copy, CopyCheck, Inbox, LoaderCircle, RefreshCcw } from "lucide-react";
+import { LuCopy, LuCopyCheck, LuInbox, LuLoaderCircle, LuRefreshCcw } from "react-icons/lu";
 
 import * as Accordion from "@radix-ui/react-accordion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -107,7 +107,7 @@ export default function Home() {
 			{/* Conditional rendering for email list section */}
 			<div className="mt-6">
 				{email === null || (isPending && !data) ? ( // Show loader if email is null OR initial fetch is pending
-					<LoaderCircle
+					<LuLoaderCircle
 						className="h-32 text-blue animate-spin mx-auto"
 						size={48}
 					/>
@@ -145,7 +145,7 @@ function NoEmailsFound() {
 
 	return (
 		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 h-32 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
-			<Inbox
+			<LuInbox
 				size={64}
 				strokeWidth={1.25}
 				className="w-1/4 md:w-1/5 min-w-1/4 animate-pulse"
@@ -224,7 +224,7 @@ function CopyButtonDisplay({
 		<div
 			className={`flex items-center space-x-2 ${copied && highlightOnCopy ? "text-green" : ""}`}
 		>
-			{copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+			{copied ? <LuCopyCheck size={16} /> : <LuCopy size={16} />}
 			<span>{copied ? "Copied!" : "Copy email"}</span>
 		</div>
 	);
@@ -241,7 +241,7 @@ function GenerateButton({ updateEmail }: { updateEmail: () => void }) {
 function GenerateButtonDisplay() {
 	return (
 		<div className="flex items-center space-x-2">
-			<RefreshCcw size={16} />
+			<LuRefreshCcw size={16} />
 			<span>Generate new email</span>
 		</div>
 	);
