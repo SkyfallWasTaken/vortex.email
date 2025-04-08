@@ -66,7 +66,7 @@ export default function Home() {
 					),
 				);
 		},
-		refetchInterval: 5000,
+		refetchInterval: 2000,
 		enabled: !!email, // Only run the query when email is not null
 	});
 
