@@ -152,7 +152,7 @@ export default function Privacy() {
             </p>
             <ul>
                 <li>
-                    <b>By email:</b> <a href="mailto:hi@skyfall.dev">hi@skyfall.dev</a>
+                    <b>By email (highly preferred):</b> <a href="mailto:hi@skyfall.dev">hi@skyfall.dev</a>
                 </li>
                 <li>
                     <b>Data Protection Officer:</b>
