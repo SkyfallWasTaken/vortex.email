@@ -24,6 +24,7 @@ export default function Donate() {
 
 			<a
 				href="https://ko-fi.com/skyfalldev"
+				aria-label="Ko-Fi (@skyfalldev)"
 				target="_blank"
 				className="mb-0"
 				rel="noreferrer"
