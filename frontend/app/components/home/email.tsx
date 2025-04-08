@@ -39,8 +39,8 @@ export default function Email({ email }: { email: EmailType }) {
 					</div>
 				</div>
 			</Accordion.Trigger>
-			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto max-h-[640px]">
-				<div className="bg-white dark:bg-black text-black dark:text-white text-[15px] border-t border-surface1">
+			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto max-h-[640px] bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
+				<div className="text-[15px]">
 					<Letter
 						html={html || text || ""}
 						text={text}
