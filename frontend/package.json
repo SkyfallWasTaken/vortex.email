@@ -43,7 +43,5 @@
 		"vite": "^6.2.5",
 		"vite-tsconfig-paths": "^5.1.4"
 	},
-	"trustedDependencies": [
-		"@biomejs/biome"
-	]
+	"trustedDependencies": ["@biomejs/biome"]
 }
