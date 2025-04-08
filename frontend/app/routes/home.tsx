@@ -151,7 +151,7 @@ function NoEmailsFound() {
 	}, [dots]);
 
 	return (
-		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 h-32 rounded w-full md:w-1/2 xl:w-1/3 mx-auto">
+		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 h-32 rounded w-full md:w-1/2 mx-auto">
 			<LuInbox
 				size={64}
 				strokeWidth={1.25}
