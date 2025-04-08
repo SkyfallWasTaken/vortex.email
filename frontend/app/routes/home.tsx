@@ -2,8 +2,7 @@ import { Copy, CopyCheck, Inbox, LoaderCircle, RefreshCcw } from "lucide-react";
 
 import * as Accordion from "@radix-ui/react-accordion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalStorage } from "@uidotdev/usehooks";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Email from "~/components/home/email";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
@@ -20,14 +19,39 @@ export function meta() {
 }
 
 export default function Home() {
-	const [email] = useLocalStorage("email", getRandomEmail());
+	const [email, setEmail] = useState<string | null>(null);
+	const queryClient = useQueryClient();
 
-	const _queryClient = useQueryClient();
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const storedEmail = localStorage.getItem("email");
+			if (storedEmail) {
+				setEmail(storedEmail);
+			} else {
+				const newEmail = getRandomEmail();
+				localStorage.setItem("email", newEmail);
+				setEmail(newEmail);
+			}
+		}
+	}, []);
+
+	const updateEmail = useCallback(() => {
+		const newEmail = getRandomEmail();
+		localStorage.setItem("email", newEmail);
+		setEmail(newEmail);
+		queryClient.setQueryData(["emails", newEmail], []);
+	}, [queryClient]);
+
 	const { isPending, error, data } = useQuery<EmailType[]>({
 		queryKey: ["emails", email],
 		queryFn: () => {
 			return fetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`)
-				.then((res) => res.json() as Promise<EmailType[]>)
+				.then((res) => {
+					if (!res.ok) {
+						throw new Error(`HTTP error! status: ${res.status}`);
+					}
+					return res.json() as Promise<EmailType[]>;
+				})
 				.then((emails) =>
 					emails.sort(
 						(a, b) =>
@@ -36,7 +60,49 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 5000,
+		enabled: !!email, // Only run the query when email is not null
 	});
+
+	if (email === null) {
+		return (
+			<div className="my-12 mx-4 md:mx-6">
+				<div className="space-y-2 text-center md:w-[65%] mx-auto">
+					<h1 className="text-4xl font-semibold">
+						Free, disposable email addresses
+					</h1>
+					<p className="text-lg text-text/80">
+						For annoying newsletters, websites, and everything in between!
+						Protect your privacy and avoid spam with temporary email addresses.
+					</p>
+				</div>
+				<div className="rounded border border-surface0 px-8 py-6 mt-6 w-full md:w-1/2 mx-auto">
+					<p className="font-semibold text-lg text-center mb-2">
+						Your email address:
+					</p>
+					<div className="flex justify-center items-center border border-surface0 bg-surface0/30 px-4 py-3 rounded mb-2.5 animate-pulse">
+						Loading...
+					</div>
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4 opacity-50 pointer-events-none">
+						{/* Disabled buttons */}
+						<button type="button" className="flex items-center space-x-2">
+							<Copy size={16} />
+							<span>Copy email</span>
+						</button>
+						<button type="button" className="flex items-center space-x-2">
+							<RefreshCcw size={16} />
+							<span>Generate new email</span>
+						</button>
+					</div>
+				</div>
+				<div className="mt-6">
+					<LoaderCircle
+						className="my-8 text-blue animate-spin mx-auto"
+						size={32}
+					/>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="my-12 mx-4 md:mx-6">
@@ -60,7 +126,7 @@ export default function Home() {
 				</div>
 				<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-blue justify-center items-center mt-4">
 					<CopyButton email={email} highlightOnCopy />
-					<GenerateButton />
+					<GenerateButton updateEmail={updateEmail} />
 				</div>
 			</div>
 
@@ -86,7 +152,7 @@ export default function Home() {
 						<ClearAllEmails email={email} />
 					</div>
 				) : (
-					!isPending && <NoEmailsFound />
+					!isPending && data && data.length === 0 && <NoEmailsFound />
 				)}
 			</div>
 		</div>
@@ -125,6 +191,7 @@ function NoEmailsFound() {
 
 function ClearAllEmails({ email }: { email: string }) {
 	const queryClient = useQueryClient();
+	if (!email) return null;
 
 	return (
 		<div className="flex flex-col gap-3 text-center">
@@ -177,19 +244,12 @@ function CopyButton({
 	);
 }
 
-function GenerateButton() {
-	const [_, setEmail] = useLocalStorage("email", getRandomEmail());
-	const queryClient = useQueryClient();
-
+function GenerateButton({ updateEmail }: { updateEmail: () => void }) {
 	return (
 		<button
 			type="button"
 			className="flex items-center space-x-2"
-			onClick={() => {
-				const newEmail = getRandomEmail();
-				queryClient.setQueryData(["emails", newEmail], []);
-				setEmail(newEmail);
-			}}
+			onClick={updateEmail}
 		>
 			<RefreshCcw size={16} />
 			<span>Generate new email</span>

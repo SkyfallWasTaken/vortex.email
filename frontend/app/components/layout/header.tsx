@@ -20,7 +20,9 @@ export default function Header() {
 							to={link.to}
 							className={({ isActive, isPending }) =>
 								`hover:text-blue transition ${
-									(isActive || isPending) ? "text-blue font-medium" : "text-text/80"
+									isActive || isPending
+										? "text-blue font-medium"
+										: "text-text/80"
 								}`
 							}
 						>

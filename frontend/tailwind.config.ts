@@ -1,6 +1,6 @@
 import catppuccin from "@catppuccin/tailwindcss";
 import typography from "@tailwindcss/typography";
-import type { Config, PluginUtils } from "tailwindcss/types/config";
+import type { Config } from "tailwindcss";
 
 const accent = "text";
 const linkColor = "mauve";
@@ -9,7 +9,7 @@ export default {
 	content: ["./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}"],
 	theme: {
 		extend: {
-			typography: ({ theme }: { theme: PluginUtils["theme"] }) => ({
+			typography: (theme) => ({
 				DEFAULT: {
 					css: {
 						"blockquote p:first-of-type::before": { content: "none" },
