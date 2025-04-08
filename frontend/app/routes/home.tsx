@@ -1,4 +1,10 @@
-import { LuCopy, LuCopyCheck, LuInbox, LuLoaderCircle, LuRefreshCcw } from "react-icons/lu";
+import {
+	LuCopy,
+	LuCopyCheck,
+	LuInbox,
+	LuLoaderCircle,
+	LuRefreshCcw,
+} from "react-icons/lu";
 
 import * as Accordion from "@radix-ui/react-accordion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

@@ -1,4 +1,4 @@
-import { fakerEN as faker } from "@faker-js/faker";
+import { randUserName } from "@ngneat/falso";
 
 export interface Email {
 	email: {
@@ -10,12 +10,10 @@ export interface Email {
 	timestamp: string;
 }
 
-export const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(
-	",",
-);
+const emailDomains: string[] = import.meta.env.VITE_EMAIL_DOMAINS.split(",");
 
 export function getRandomEmail() {
 	const emailDomain =
 		emailDomains[Math.floor(Math.random() * emailDomains.length)];
-	return `${faker.internet.username().toLowerCase()}@${emailDomain}`;
+	return `${randUserName({ withAccents: false }).toLowerCase()}@${emailDomain}`;
 }

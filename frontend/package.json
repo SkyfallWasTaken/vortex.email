@@ -12,7 +12,7 @@
 		"format": "biome format --write"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^9.6.0",
+		"@ngneat/falso": "^7.3.0",
 		"@radix-ui/react-accordion": "^1.2.3",
 		"@react-router/node": "^7.5.0",
 		"@react-router/serve": "^7.5.0",
@@ -23,6 +23,7 @@
 		"letterparser": "^0.1.8",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
+		"react-icons": "^5.5.0",
 		"react-letter": "^0.4.0",
 		"react-router": "^7.5.0"
 	},
@@ -42,7 +43,5 @@
 		"vite": "^6.2.5",
 		"vite-tsconfig-paths": "^5.1.4"
 	},
-	"trustedDependencies": [
-		"@biomejs/biome"
-	]
+	"trustedDependencies": ["@biomejs/biome"]
 }
