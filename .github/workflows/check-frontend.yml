@@ -25,4 +25,4 @@ jobs:
         run: VITE_EMAIL_DOMAINS=localhost bun run build
 
       - name: Run checks
-        run: bun run check
+        run: bun react-router typegen && bun run check
