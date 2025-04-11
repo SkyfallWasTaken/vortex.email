@@ -1,5 +1,16 @@
 import KofiButton from "~/assets/kofi-button.png";
 
+export function meta() {
+	return [
+		{ title: "Support Vortex" },
+		{
+			name: "description",
+			content:
+				"If Vortex has been useful for you, here's how to support the project!",
+		},
+	];
+}
+
 export default function Donate() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">

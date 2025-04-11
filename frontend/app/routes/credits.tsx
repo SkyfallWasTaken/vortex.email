@@ -1,3 +1,14 @@
+export function meta() {
+	return [
+		{ title: "Credits - Vortex" },
+		{
+			name: "description",
+			content:
+				"Vortex has been made possible by the help of many people. Here's the list of everyone who has contributed!",
+		},
+	];
+}
+
 export default function Credits() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">

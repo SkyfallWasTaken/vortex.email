@@ -1,5 +1,16 @@
 import { Link } from "react-router";
 
+export function meta() {
+	return [
+		{ title: "Legal - Vortex" },
+		{
+			name: "description",
+			content:
+				"View the terms of service and privacy policy for Vortex, a free, disposable email address service.",
+		},
+	];
+}
+
 export default function Legal() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">

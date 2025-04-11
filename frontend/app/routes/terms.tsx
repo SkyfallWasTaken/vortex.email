@@ -1,5 +1,18 @@
 import { Link } from "react-router";
 
+const lastUpdated = "April 8, 2025";
+
+export function meta() {
+	return [
+		{ title: "Terms of Service - Vortex" },
+		{
+			name: "description",
+			content:
+				`View the Terms of Service for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
+		},
+	];
+}
+
 export default function Terms() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">
@@ -9,7 +22,7 @@ export default function Terms() {
 			<p className="text-text/80">You need to read this before using Vortex.</p>
 
 			<p>
-				<strong>Last Updated: April 8, 2025</strong>
+				<strong>Last Updated: {lastUpdated}</strong>
 			</p>
 			<h2 id="1-introduction">1. Introduction</h2>
 			<p>

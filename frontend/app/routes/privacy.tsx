@@ -1,3 +1,16 @@
+const lastUpdated = "April 8, 2025";
+
+export function meta() {
+	return [
+		{ title: "Privacy Policy - Vortex" },
+		{
+			name: "description",
+			content:
+				`View the privacy policy for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
+		},
+	];
+}
+
 export default function Privacy() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">
@@ -8,7 +21,7 @@ export default function Privacy() {
 				How we process and use your information to run Vortex.
 			</p>
 			<p>
-				<strong>Last Updated: April 8, 2025</strong>
+				<strong>Last Updated: {lastUpdated}</strong>
 			</p>
 			<h2 id="1-introduction">1. Introduction</h2>
 			<p>
