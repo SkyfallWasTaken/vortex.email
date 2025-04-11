@@ -106,8 +106,8 @@ async fn server_main() -> Result<()> {
                 "/",
                 get(|| async { format!("vortex-server v{}", env!("CARGO_PKG_VERSION")) }),
             )
-            .route("/emails/:email", get(get_emails))
-            .route("/emails/:email/clear", delete(clear_emails))
+            .route("/emails/{email}", get(get_emails))
+            .route("/emails/{email}/clear", delete(clear_emails))
             .with_state(http_state)
             .layer(cors);
 
