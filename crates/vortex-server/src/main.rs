@@ -1,25 +1,20 @@
-// Piling on some tech debt because it's midnight and I just want this fixed atm
-// I promise this will be fixed soon enough
 use std::env;
 use std::sync::Arc;
 
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     http::{HeaderValue, Method, StatusCode},
     routing::{delete, get},
-    Extension, Json, Router,
+    Json, Router,
 };
-use color_eyre::{
-    eyre::{eyre, Context},
-    Result,
-};
+use color_eyre::{eyre::Context, Result};
 use dashmap::DashMap;
 use email_address_parser::EmailAddress;
 use serde::Serialize;
-use tokio::{net::TcpListener, task::JoinHandle};
+use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tracing::Level;
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use vortex_smtp::{event::Event, Email};
 
@@ -33,62 +28,78 @@ struct ExtendedEmail {
 }
 type EmailsMap = DashMap<String, Vec<ExtendedEmail>>;
 
-async fn flatten<T, E: ToString>(handle: JoinHandle<Result<T, E>>) -> Result<T, String> {
-    match handle.await {
-        Ok(Ok(result)) => Ok(result),
-        Ok(Err(err)) => Err(err.to_string()),
-        Err(_) => Err("unknown error".to_string()),
-    }
+#[derive(Clone)]
+struct AppState {
+    emails: Arc<EmailsMap>,
+    allowed_domains: Arc<Vec<String>>,
 }
 
 #[tracing::instrument]
 async fn server_main() -> Result<()> {
-    let emails_map: Arc<EmailsMap> = Arc::new(DashMap::new());
-    let emails_map_validator = emails_map.clone();
-    let emails_map_smtp = emails_map.clone();
-    let email_domains =
+    // Load configuration
+    let allowed_domains =
         env::var("VITE_EMAIL_DOMAINS").wrap_err("VITE_EMAIL_DOMAINS must be set")?;
-    let email_domains: Arc<Vec<String>> =
-        Arc::new(email_domains.split(',').map(String::from).collect());
+    let allowed_domains: Arc<Vec<String>> =
+        Arc::new(allowed_domains.split(',').map(String::from).collect());
+    let frontend_domain = env::var("FRONTEND_DOMAIN").wrap_err("FRONTEND_DOMAIN must be set")?;
 
-    let email_domains_smtp = email_domains.clone();
+    // Create shared state
+    let app_state = AppState {
+        emails: Arc::new(DashMap::new()),
+        allowed_domains,
+    };
+
+    // --- SMTP Server ---
+    let smtp_validator_state = app_state.clone();
+    let smtp_event_state = app_state.clone(); // Clone state for the event handler too
     let smtp_server = tokio::spawn(async move {
         vortex_smtp::listen(
             SMTP_ADDR,
+            // Validator closure
             move |email| {
-                tracing::debug!(email, "validating email");
-                validate_vortex_email(email, &email_domains_smtp)
-                    && emails_map_validator.contains_key(email)
+                tracing::debug!(email, "validating email for SMTP");
+                validate_vortex_email(email, &smtp_validator_state.allowed_domains)
+                    && smtp_validator_state.emails.contains_key(email)
             },
-            move |event| match &event {
-                Event::EmailReceived(email) => {
+            // Event handler closure
+            move |event| {
+                #[allow(irrefutable_let_patterns)]
+                if let Event::EmailReceived(email) = &event {
                     tracing::debug!(
                         mail_from = email.mail_from,
                         rcpt_to = email.rcpt_to.join(", "),
-                        "email received"
+                        "email received via SMTP"
                     );
 
-                    let keys = email.rcpt_to.clone();
-                    for key in keys {
-                        let mut emails = emails_map.get_mut(&key).unwrap();
-                        emails.push(ExtendedEmail {
-                            email: email.clone(),
-                            timestamp: chrono::Utc::now().to_rfc3339(),
-                        });
+                    let timestamp = chrono::Utc::now().to_rfc3339();
+                    for recipient in &email.rcpt_to {
+                        if let Some(mut mailbox) = smtp_event_state.emails.get_mut(recipient) {
+                            mailbox.push(ExtendedEmail {
+                                email: email.clone(),
+                                timestamp: timestamp.clone(),
+                            });
+                        } else {
+                            // This case should ideally not happen if validator works correctly
+                            tracing::warn!(recipient, "Received email for non-existent mailbox");
+                        }
                     }
                 }
             },
         )
         .await
+        .wrap_err("SMTP server failed")
     });
 
+    // --- HTTP Server ---
+    let http_state = app_state.clone();
     let http_server = tokio::spawn(async move {
-        let cors = CorsLayer::new().allow_methods([Method::GET]).allow_origin(
-            env::var("FRONTEND_DOMAIN")
-                .expect("FRONTEND_DOMAIN must be set")
-                .parse::<HeaderValue>()
-                .unwrap(),
-        );
+        let cors = CorsLayer::new()
+            .allow_methods([Method::GET, Method::DELETE]) // Allow DELETE for clear_emails
+            .allow_origin(
+                frontend_domain
+                    .parse::<HeaderValue>()
+                    .wrap_err("Invalid FRONTEND_DOMAIN")?,
+            );
 
         let router = Router::new()
             .route(
@@ -97,70 +108,81 @@ async fn server_main() -> Result<()> {
             )
             .route("/emails/:email", get(get_emails))
             .route("/emails/:email/clear", delete(clear_emails))
-            .layer(Extension(emails_map_smtp))
-            .layer(Extension(email_domains))
+            .with_state(http_state)
             .layer(cors);
-        let listener = TcpListener::bind(HTTP_ADDR).await.unwrap();
 
-        tracing::debug!("http listening on {HTTP_ADDR}");
-        axum::serve(listener, router).await
+        let listener = TcpListener::bind(HTTP_ADDR)
+            .await
+            .wrap_err_with(|| format!("Failed to bind HTTP server to {HTTP_ADDR}"))?;
+
+        tracing::info!("HTTP server listening on {HTTP_ADDR}");
+        axum::serve(listener, router)
+            .await
+            .wrap_err("HTTP server failed")
     });
 
-    tracing::debug!("starting servers");
-    if let Err(err) = tokio::try_join!(flatten(http_server), flatten(smtp_server)) {
-        return Err(eyre!(err));
-    };
+    // --- Run Servers ---
+    tracing::info!("Starting servers...");
+    let (http_res, smtp_res) = tokio::try_join!(http_server, smtp_server)?;
+    if let Err(err) = http_res {
+        tracing::error!("HTTP server failed: {err}");
+        return Err(err);
+    }
+    if let Err(err) = smtp_res {
+        tracing::error!("SMTP server failed: {err}");
+        return Err(err);
+    }
 
     Ok(())
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip(state))]
 async fn get_emails(
+    State(state): State<AppState>,
     Path(email): Path<String>,
-    Extension(emails_map): Extension<Arc<EmailsMap>>,
-    Extension(email_domains): Extension<Arc<Vec<String>>>,
-) -> (StatusCode, Json<Vec<ExtendedEmail>>) {
-    let emails_map = emails_map.as_ref();
+) -> Result<(StatusCode, Json<Vec<ExtendedEmail>>), StatusCode> {
+    if !validate_vortex_email(&email, &state.allowed_domains) {
+        tracing::warn!(email, "Invalid domain requested");
+        return Err(StatusCode::BAD_REQUEST);
+    }
 
-    if validate_vortex_email(&email, &email_domains) {
-        if let Some(emails) = emails_map.get(&email) {
-            (StatusCode::OK, Json(emails.clone()))
-        } else {
-            tracing::info!(email, "mailbox not found, adding to map");
-            emails_map.insert(email.clone(), Vec::new());
-            (StatusCode::CREATED, Json(Vec::new()))
+    match state.emails.entry(email.clone()) {
+        dashmap::mapref::entry::Entry::Occupied(entry) => {
+            Ok((StatusCode::OK, Json(entry.get().clone())))
         }
-    } else {
-        (StatusCode::BAD_REQUEST, Json(Vec::new()))
+        dashmap::mapref::entry::Entry::Vacant(entry) => {
+            tracing::info!(email, "Mailbox created on first access");
+            entry.insert(Vec::new());
+            Ok((StatusCode::CREATED, Json(Vec::new())))
+        }
     }
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip(state))]
 async fn clear_emails(
+    State(state): State<AppState>,
     Path(email): Path<String>,
-    Extension(emails_map): Extension<Arc<EmailsMap>>,
-    Extension(email_domains): Extension<Arc<Vec<String>>>,
-) -> (StatusCode, Json<Vec<ExtendedEmail>>) {
-    let emails_map = emails_map.as_ref();
+) -> Result<StatusCode, StatusCode> {
+    if !validate_vortex_email(&email, &state.allowed_domains) {
+        tracing::warn!(email, "Invalid domain requested for clearing");
+        return Err(StatusCode::BAD_REQUEST);
+    }
 
-    if validate_vortex_email(&email, &email_domains) {
-        if let Some(mut emails) = emails_map.get_mut(&email) {
-            emails.clear();
-            (StatusCode::OK, Json(emails.clone()))
-        } else {
-            tracing::info!(email, "mailbox not found");
-            (StatusCode::NOT_FOUND, Json(Vec::new()))
-        }
+    if let Some(mut emails) = state.emails.get_mut(&email) {
+        emails.clear();
+        tracing::info!(email, "Mailbox cleared");
+        Ok(StatusCode::NO_CONTENT) // 204
     } else {
-        (StatusCode::BAD_REQUEST, Json(Vec::new()))
+        tracing::info!(email, "Attempted to clear non-existent mailbox");
+        Err(StatusCode::NOT_FOUND)
     }
 }
 
-fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
+fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
-    email_domains
+    allowed_domains
         .iter()
         .any(|domain| parsed.domain() == *domain)
 }
@@ -168,15 +190,7 @@ fn validate_vortex_email(email: &str, email_domains: &[String]) -> bool {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let subscriber = FmtSubscriber::builder()
-        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-        // will be written to stdout.
-        .with_max_level(Level::TRACE)
-        // completes the builder.
-        .finish();
-
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-
+    // Initialize Sentry
     let sentry_dsn =
         env::var("VITE_SENTRY_DSN").wrap_err("failed to read env var VITE_SENTRY_DSN")?;
     let _sentry_guard = sentry::init((
@@ -188,10 +202,16 @@ fn main() -> Result<()> {
         },
     ));
 
+    // Initialize tracing subscriber with Sentry layer
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into())) // Default to INFO level, adjustable via RUST_LOG
+        .with(tracing_subscriber::fmt::layer())
+        .with(sentry_tracing::layer())
+        .init();
+
+    // Build and run the Tokio runtime
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
-        .block_on(server_main())?;
-
-    Ok(())
+        .block_on(server_main())
 }

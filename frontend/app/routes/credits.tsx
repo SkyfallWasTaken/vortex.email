@@ -103,8 +103,7 @@ export default function Credits() {
 					for the <b>gambling.baby</b> domain
 				</li>
 				<li>
-					Lucas{" "}
-					for the <b>whatisham.eu.org</b> subdomain
+					Lucas for the <b>whatisham.eu.org</b> subdomain
 				</li>
 			</ul>
 		</div>
