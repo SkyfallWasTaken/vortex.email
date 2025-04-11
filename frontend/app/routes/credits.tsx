@@ -37,7 +37,7 @@ export default function Credits() {
 				</li>
 				<li>
 					<a
-						href="https://mattsoh.dev/"
+						href="https://github.com/mattsoh"
 						target="_blank"
 						className="underline"
 						rel="noreferrer"
@@ -60,7 +60,7 @@ export default function Credits() {
 				</li>
 				<li>
 					<a
-						href="https://jer.app/"
+						href="https://github.com/jeremy46231"
 						target="_blank"
 						className="underline"
 						rel="noreferrer"
@@ -71,7 +71,7 @@ export default function Credits() {
 				</li>
 				<li>
 					<a
-						href="https://matytyma.dev/"
+						href="https://github.com/matytyma"
 						target="_blank"
 						className="underline"
 						rel="noreferrer"
@@ -103,14 +103,7 @@ export default function Credits() {
 					for the <b>gambling.baby</b> domain
 				</li>
 				<li>
-					<a
-						href="https://whatisham.eu.org/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Lucas
-					</a>{" "}
+					Lucas{" "}
 					for the <b>whatisham.eu.org</b> subdomain
 				</li>
 			</ul>
