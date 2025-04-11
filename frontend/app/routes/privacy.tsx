@@ -5,8 +5,7 @@ export function meta() {
 		{ title: "Privacy Policy - Vortex" },
 		{
 			name: "description",
-			content:
-				`View the privacy policy for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
+			content: `View the privacy policy for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
 		},
 	];
 }

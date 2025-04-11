@@ -7,8 +7,7 @@ export function meta() {
 		{ title: "Terms of Service - Vortex" },
 		{
 			name: "description",
-			content:
-				`View the Terms of Service for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
+			content: `View the Terms of Service for Vortex, a free, disposable email address service.\nLast updated on ${lastUpdated}.`,
 		},
 	];
 }
