@@ -53,6 +53,7 @@ async fn server_main() -> Result<()> {
     let smtp_validator_state = app_state.clone();
     let smtp_event_state = app_state.clone(); // Clone state for the event handler too
     let smtp_server = tokio::spawn(async move {
+        tracing::info!("SMTP server listening on {SMTP_ADDR}");
         vortex_smtp::listen(
             SMTP_ADDR,
             // Validator closure
