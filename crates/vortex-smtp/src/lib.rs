@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use nanoid::nanoid;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tokio::time::{timeout, Duration};
@@ -198,7 +198,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Email {
     pub mail_from: String,
     pub rcpt_to: Vec<String>,

@@ -1,12 +1,11 @@
 [package]
 name = "vortex-server"
-version = "0.3.3"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
 axum = "0.8.3"
 color-eyre = "0.6.3"
-dashmap = "6.0.0"
 email-address-parser = "2.0.0"
 sentry = { version = "0.37.0", features = ["tracing"] }
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
@@ -17,6 +16,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = "0.4.40"
 serde = { version = "1.0.219", features = ["derive"] }
 sentry-tracing = "0.37.0"
+redis = { version = "0.29.5", features = ["tokio-comp"] }
+serde_json = "1.0.140"
 
 [lints]
 workspace = true

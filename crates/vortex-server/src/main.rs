@@ -8,10 +8,11 @@ use axum::{
     Json, Router,
 };
 use color_eyre::{eyre::Context, Result};
-use dashmap::DashMap;
 use email_address_parser::EmailAddress;
-use serde::Serialize;
+use redis::{aio::MultiplexedConnection, AsyncCommands, Client, RedisResult};
+use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -21,48 +22,54 @@ use vortex_smtp::{event::Event, Email};
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:2525";
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct ExtendedEmail {
     email: Email,
     timestamp: String,
 }
-type EmailsMap = DashMap<String, Vec<ExtendedEmail>>;
 
 #[derive(Clone)]
 struct AppState {
-    emails: Arc<EmailsMap>,
+    redis_conn: Arc<Mutex<MultiplexedConnection>>,
     allowed_domains: Arc<Vec<String>>,
 }
 
 #[tracing::instrument]
 async fn server_main() -> Result<()> {
-    // Load configuration
     let allowed_domains =
         env::var("VITE_EMAIL_DOMAINS").wrap_err("VITE_EMAIL_DOMAINS must be set")?;
     let allowed_domains: Arc<Vec<String>> =
         Arc::new(allowed_domains.split(',').map(String::from).collect());
     let frontend_domain = env::var("FRONTEND_DOMAIN").wrap_err("FRONTEND_DOMAIN must be set")?;
+    
+    let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_client = Client::open(redis_url.clone())
+        .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
+    
+    let redis_conn = redis_client.get_multiplexed_async_connection().await
+        .wrap_err("Failed to establish Redis connection")?;
+    
+    let mut conn_clone = redis_conn.clone();
+    let _: String = redis::cmd("PING").query_async(&mut conn_clone).await
+        .wrap_err("Failed to ping Redis server")?;
+    tracing::info!("Connected to Redis server at {}", redis_url);
 
-    // Create shared state
     let app_state = AppState {
-        emails: Arc::new(DashMap::new()),
+        redis_conn: Arc::new(Mutex::new(redis_conn)),
         allowed_domains,
     };
 
-    // --- SMTP Server ---
     let smtp_validator_state = app_state.clone();
-    let smtp_event_state = app_state.clone(); // Clone state for the event handler too
+    let smtp_event_state = app_state.clone();
     let smtp_server = tokio::spawn(async move {
         tracing::info!("SMTP server listening on {SMTP_ADDR}");
         vortex_smtp::listen(
             SMTP_ADDR,
-            // Validator closure
             move |email| {
-                tracing::debug!(email, "validating email for SMTP");
-                validate_vortex_email(email, &smtp_validator_state.allowed_domains)
-                    && smtp_validator_state.emails.contains_key(email)
+                let state = smtp_validator_state.clone();
+                let email_str = email.to_string();
+                validate_vortex_email(&email_str, &state.allowed_domains)
             },
-            // Event handler closure
             move |event| {
                 #[allow(irrefutable_let_patterns)]
                 if let Event::EmailReceived(email) = &event {
@@ -73,17 +80,21 @@ async fn server_main() -> Result<()> {
                     );
 
                     let timestamp = chrono::Utc::now().to_rfc3339();
-                    for recipient in &email.rcpt_to {
-                        if let Some(mut mailbox) = smtp_event_state.emails.get_mut(recipient) {
-                            mailbox.push(ExtendedEmail {
-                                email: email.clone(),
-                                timestamp: timestamp.clone(),
-                            });
-                        } else {
-                            // This case should ideally not happen if validator works correctly
-                            tracing::warn!(recipient, "Received email for non-existent mailbox");
+                    let state = smtp_event_state.clone();
+                    let email_clone = email.clone();
+                    
+                    tokio::spawn(async move {
+                        for recipient in &email_clone.rcpt_to {
+                            match store_email_in_redis(&state, recipient, &email_clone, &timestamp).await {
+                                Ok(_) => {
+                                    tracing::debug!(recipient, "Email stored in Redis");
+                                }
+                                Err(e) => {
+                                    tracing::error!(recipient, error = %e, "Failed to store email in Redis");
+                                }
+                            }
                         }
-                    }
+                    });
                 }
             },
         )
@@ -91,11 +102,10 @@ async fn server_main() -> Result<()> {
         .wrap_err("SMTP server failed")
     });
 
-    // --- HTTP Server ---
     let http_state = app_state.clone();
     let http_server = tokio::spawn(async move {
         let cors = CorsLayer::new()
-            .allow_methods([Method::GET, Method::DELETE]) // Allow DELETE for clear_emails
+            .allow_methods([Method::GET, Method::DELETE])
             .allow_origin(
                 frontend_domain
                     .parse::<HeaderValue>()
@@ -122,7 +132,6 @@ async fn server_main() -> Result<()> {
             .wrap_err("HTTP server failed")
     });
 
-    // --- Run Servers ---
     tracing::info!("Starting servers...");
     let (http_res, smtp_res) = tokio::try_join!(http_server, smtp_server)?;
     if let Err(err) = http_res {
@@ -137,6 +146,28 @@ async fn server_main() -> Result<()> {
     Ok(())
 }
 
+async fn store_email_in_redis(
+    state: &AppState,
+    recipient: &str, 
+    email: &Email,
+    timestamp: &str
+) -> RedisResult<()> {
+    let mut conn = state.redis_conn.lock().await.clone();
+    
+    let key = format!("emails:{}", recipient);
+    
+    let extended_email = ExtendedEmail {
+        email: email.clone(),
+        timestamp: timestamp.to_string(),
+    };
+    let json = serde_json::to_string(&extended_email)
+        .map_err(|e| redis::RedisError::from((redis::ErrorKind::IoError, "Serialization error", e.to_string())))?;
+    
+    let _: () = conn.rpush(&key, json).await?;
+    
+    Ok(())
+}
+
 #[tracing::instrument(skip(state))]
 async fn get_emails(
     State(state): State<AppState>,
@@ -147,16 +178,29 @@ async fn get_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    match state.emails.entry(email.clone()) {
-        dashmap::mapref::entry::Entry::Occupied(entry) => {
-            Ok((StatusCode::OK, Json(entry.get().clone())))
-        }
-        dashmap::mapref::entry::Entry::Vacant(entry) => {
-            tracing::info!(email, "Mailbox created on first access");
-            entry.insert(Vec::new());
-            Ok((StatusCode::CREATED, Json(Vec::new())))
-        }
-    }
+    let key = format!("emails:{}", email);
+    let mut conn = state.redis_conn.lock().await.clone();
+    
+    let email_jsons: Vec<String> = conn.lrange(&key, 0, -1).await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to retrieve emails from Redis");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    
+    let emails: Vec<ExtendedEmail> = email_jsons
+        .into_iter()
+        .filter_map(|json| {
+            match serde_json::from_str(&json) {
+                Ok(email) => Some(email),
+                Err(e) => {
+                    tracing::error!(error = %e, "Failed to deserialize email from Redis");
+                    None
+                }
+            }
+        })
+        .collect();
+    
+    Ok((StatusCode::OK, Json(emails)))
 }
 
 #[tracing::instrument(skip(state))]
@@ -169,14 +213,16 @@ async fn clear_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    if let Some(mut emails) = state.emails.get_mut(&email) {
-        emails.clear();
-        tracing::info!(email, "Mailbox cleared");
-        Ok(StatusCode::NO_CONTENT) // 204
-    } else {
-        tracing::info!(email, "Attempted to clear non-existent mailbox");
-        Err(StatusCode::NOT_FOUND)
-    }
+    let key = format!("emails:{}", email);
+    let mut conn = state.redis_conn.lock().await.clone();
+    
+    let _: () = conn.del(&key).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to clear emails from Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    tracing::info!(email, "Mailbox cleared");
+    Ok(StatusCode::NO_CONTENT)
 }
 
 fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
@@ -191,7 +237,6 @@ fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    // Initialize Sentry
     let sentry_dsn =
         env::var("VITE_SENTRY_DSN").wrap_err("failed to read env var VITE_SENTRY_DSN")?;
     let _sentry_guard = sentry::init((
@@ -203,14 +248,12 @@ fn main() -> Result<()> {
         },
     ));
 
-    // Initialize tracing subscriber with Sentry layer
     tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into())) // Default to INFO level, adjustable via RUST_LOG
+        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into()))
         .with(tracing_subscriber::fmt::layer())
         .with(sentry_tracing::layer())
         .init();
 
-    // Build and run the Tokio runtime
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
