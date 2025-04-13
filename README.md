@@ -19,8 +19,9 @@ You will need:
 - Rust
 - Bun
 - Node.js (to actually run the project)
+- Redis (we use the redis:7 Docker image in production)
 
-It's also recommended to install Docker so you can run the SMTP server.
+It's also highly recommended to use Docker so you can run the project as you would in production.
 
 ### Building the SMTP server
 
@@ -38,6 +39,7 @@ Run:
 
 ```bash
 cd frontend
+bun install
 bun run build
 ```
 
@@ -67,20 +69,18 @@ bun dev
 
 #### Frontend
 
-Run it anywhere, e.g. Cloudflare Pages. Ensure environment variables are set.
+By default, the project is configured to run on Vercel. If you're not running the project on Vercel, remove the Vercel preset from react-router.config.ts.
 
 #### Backend
 
 This assumes that you are using Docker and Caddy.
 
-Firstly, create a new user for Vortex.
+Firstly, create a new Linux user for Vortex. Then, [install rootless Docker](https://docs.docker.com/engine/security/rootless) for the Vortex user.
 
-Secondly, [install rootless Docker.](https://docs.docker.com/engine/security/rootless) for the Vortex user.
-
-Then this Docker command:
+Run this Docker command:
 
 ```bash
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE -v /home/vortex/vtx-logs:/app/logs -p 25:25 -p 3000:3000 --name vortex-backend ghcr.io/skyfallwastaken/vortex.email:main
+docker run -v /home/vortex/vtx-logs:/app/logs -p 2525:2525 -p 3000:3000 --name vortex-backend ghcr.io/skyfallwastaken/vortex.email:main
 ```
 
 And finally, this Caddy reverse proxy command:
