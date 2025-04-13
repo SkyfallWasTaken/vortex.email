@@ -1,7 +1,8 @@
 use const_format::formatcp;
 
+// FIXME: don't hardcode these
 pub const GREETING: &[u8] = formatcp!(
-    "220 smtp.example.org ESMTP VortexSMTP(v{})\n",
+    "220 mail.vortex.skyfall.dev ESMTP VortexSMTP(v{})\n",
     env!("CARGO_PKG_VERSION")
 )
 .as_bytes();
@@ -16,7 +17,7 @@ pub const MESSAGE_TOO_LARGE: &[u8] = b"552 Message size exceeds fixed maximum me
 pub const BYE: &[u8] = b"221 Bye\n";
 
 pub fn helo_response(hostname: &str) -> String {
-    format!("250-smtp2.example.org ready when you are, {hostname}\n")
+    format!("250-mail.vortex.skyfall.dev ready when you are, {hostname}\n")
 }
 
 #[derive(Debug, PartialEq, Eq)]
