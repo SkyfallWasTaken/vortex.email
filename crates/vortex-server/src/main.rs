@@ -41,16 +41,20 @@ async fn server_main() -> Result<()> {
     let allowed_domains: Arc<Vec<String>> =
         Arc::new(allowed_domains.split(',').map(String::from).collect());
     let frontend_domain = env::var("FRONTEND_DOMAIN").wrap_err("FRONTEND_DOMAIN must be set")?;
-    
+
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let redis_client = Client::open(redis_url.clone())
         .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
-    
-    let redis_conn = redis_client.get_multiplexed_async_connection().await
+
+    let redis_conn = redis_client
+        .get_multiplexed_async_connection()
+        .await
         .wrap_err("Failed to establish Redis connection")?;
-    
+
     let mut conn_clone = redis_conn.clone();
-    let _: String = redis::cmd("PING").query_async(&mut conn_clone).await
+    let _: String = redis::cmd("PING")
+        .query_async(&mut conn_clone)
+        .await
         .wrap_err("Failed to ping Redis server")?;
     tracing::info!("Connected to Redis server at {}", redis_url);
 
@@ -82,7 +86,7 @@ async fn server_main() -> Result<()> {
                     let timestamp = chrono::Utc::now().to_rfc3339();
                     let state = smtp_event_state.clone();
                     let email_clone = email.clone();
-                    
+
                     tokio::spawn(async move {
                         for recipient in &email_clone.rcpt_to {
                             match store_email_in_redis(&state, recipient, &email_clone, &timestamp).await {
@@ -148,23 +152,41 @@ async fn server_main() -> Result<()> {
 
 async fn store_email_in_redis(
     state: &AppState,
-    recipient: &str, 
+    recipient: &str,
     email: &Email,
-    timestamp: &str
+    timestamp: &str,
 ) -> RedisResult<()> {
     let mut conn = state.redis_conn.lock().await.clone();
-    
+
     let key = format!("emails:{}", recipient);
-    
+
+    // Parse the timestamp string back into a DateTime object to get the Unix timestamp
+    let timestamp_dt = chrono::DateTime::parse_from_rfc3339(timestamp)
+        .map_err(|e| {
+            redis::RedisError::from((
+                redis::ErrorKind::TypeError,
+                "Timestamp parse error",
+                e.to_string(),
+            ))
+        })?
+        .with_timezone(&chrono::Utc);
+    let score = timestamp_dt.timestamp();
+
     let extended_email = ExtendedEmail {
         email: email.clone(),
         timestamp: timestamp.to_string(),
     };
-    let json = serde_json::to_string(&extended_email)
-        .map_err(|e| redis::RedisError::from((redis::ErrorKind::IoError, "Serialization error", e.to_string())))?;
-    
-    let _: () = conn.rpush(&key, json).await?;
-    
+    let json = serde_json::to_string(&extended_email).map_err(|e| {
+        redis::RedisError::from((
+            redis::ErrorKind::IoError,
+            "Serialization error",
+            e.to_string(),
+        ))
+    })?;
+
+    // Use ZADD instead of RPUSH, with the Unix timestamp as the score
+    let _: () = conn.zadd(&key, json, score).await?;
+
     Ok(())
 }
 
@@ -180,26 +202,23 @@ async fn get_emails(
 
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
-    
-    let email_jsons: Vec<String> = conn.lrange(&key, 0, -1).await
-        .map_err(|e| {
-            tracing::error!(error = %e, "Failed to retrieve emails from Redis");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-    
+
+    let email_jsons: Vec<String> = conn.lrange(&key, 0, -1).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to retrieve emails from Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
     let emails: Vec<ExtendedEmail> = email_jsons
         .into_iter()
-        .filter_map(|json| {
-            match serde_json::from_str(&json) {
-                Ok(email) => Some(email),
-                Err(e) => {
-                    tracing::error!(error = %e, "Failed to deserialize email from Redis");
-                    None
-                }
+        .filter_map(|json| match serde_json::from_str(&json) {
+            Ok(email) => Some(email),
+            Err(e) => {
+                tracing::error!(error = %e, "Failed to deserialize email from Redis");
+                None
             }
         })
         .collect();
-    
+
     Ok((StatusCode::OK, Json(emails)))
 }
 
@@ -215,12 +234,12 @@ async fn clear_emails(
 
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
-    
+
     let _: () = conn.del(&key).await.map_err(|e| {
         tracing::error!(error = %e, "Failed to clear emails from Redis");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    
+
     tracing::info!(email, "Mailbox cleared");
     Ok(StatusCode::NO_CONTENT)
 }
