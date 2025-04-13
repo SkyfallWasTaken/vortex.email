@@ -94,7 +94,7 @@ caddy reverse-proxy --from <your api domain> --to :3000
 #### License
 
 <sup>
-Licensed under the <a href="LICENSE.md">GNU Affero General Public License v3.0</a>.
+Licensed under the <a href="LICENSE">GNU Affero General Public License v3.0</a>.
 </sup>
 
 <br>
