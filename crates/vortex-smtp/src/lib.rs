@@ -77,7 +77,7 @@ async fn process<T: Send + Fn(&str) -> bool>(
 
         if state.waiting_for_data {
             // TODO: Implement dot stuffing
-            tracing::debug!("data: {:?}", msg);
+            // tracing::debug!("data: {:?}", msg);
             // TODO: is this correct?
             if msg.ends_with("\r\n.\r\n") {
                 // -5 for \r\n.\r\n
