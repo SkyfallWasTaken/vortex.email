@@ -5,3 +5,5 @@
 /.react-router/
 /build/
 .vercel
+
+app/routes/__screenshots__/

@@ -24,7 +24,7 @@ export default defineConfig({
 			plugins: [tailwindcss, autoprefixer],
 		},
 	},
-	plugins: [reactRouter(), tsconfigPaths()],
+	plugins: [!process.env.VITEST && reactRouter(), tsconfigPaths()],
 	define: {
 		__GIT_COMMIT_HASH__: JSON.stringify(getGitCommitHash()),
 		__GIT_COMMIT_URL__: JSON.stringify(getGitCommitLink()),
