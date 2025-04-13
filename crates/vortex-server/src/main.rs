@@ -203,7 +203,7 @@ async fn get_emails(
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
 
-    let email_jsons: Vec<String> = conn.lrange(&key, 0, -1).await.map_err(|e| {
+    let email_jsons: Vec<String> = conn.zrevrange(&key, 0, -1).await.map_err(|e| {
         tracing::error!(error = %e, "Failed to retrieve emails from Redis");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
