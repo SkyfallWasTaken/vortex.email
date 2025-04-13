@@ -268,7 +268,7 @@ fn main() -> Result<()> {
     ));
 
     tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into()))
+        .with(EnvFilter::from_default_env())
         .with(tracing_subscriber::fmt::layer())
         .with(sentry_tracing::layer())
         .init();
