@@ -1,6 +1,6 @@
 import * as Accordion from "@radix-ui/react-accordion";
 import { extract } from "letterparser";
-import { Letter } from "react-letter";
+import { sanitize as initialSanitize } from "lettersanitizer";
 import type { Email as EmailType } from "~/utils/main";
 
 export default function Email({ email }: { email: EmailType }) {
@@ -11,6 +11,7 @@ export default function Email({ email }: { email: EmailType }) {
 
 	const imageSize = 48;
 	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/256/h/256?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
+	const sanitizedHtml = html ? sanitize(html) : `<pre>${sanitize(text || "")}</pre>`;
 
 	return (
 		<Accordion.Item
@@ -39,15 +40,21 @@ export default function Email({ email }: { email: EmailType }) {
 					</div>
 				</div>
 			</Accordion.Trigger>
-			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto max-h-[640px] bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
+			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto max-h-[440px] bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
 				<div className="text-[15px]">
-					<Letter
-						html={html || text || ""}
-						text={text}
-						rewriteExternalResources={(url) => `https://wsrv.nl/?url=${url}`}
+					<iframe
+						srcDoc={sanitizedHtml}
+						className="w-full h-[640px] border-0"
+						sandbox=""
 					/>
 				</div>
 			</Accordion.Content>
 		</Accordion.Item>
 	);
+}
+
+function sanitize(html: string, text?: string) {
+	return initialSanitize(html, text, {
+		rewriteExternalResources: (url) => `https://wsrv.nl/?url=${url}`
+	});
 }
