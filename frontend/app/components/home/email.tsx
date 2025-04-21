@@ -40,7 +40,7 @@ export default function Email({ email }: { email: EmailType }) {
 					</div>
 				</div>
 			</Accordion.Trigger>
-			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
+			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto overflow-y-hidden bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
 				<div className="text-[15px]">
 					<iframe
 						srcDoc={sanitizedHtml}
