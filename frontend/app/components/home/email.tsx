@@ -40,11 +40,12 @@ export default function Email({ email }: { email: EmailType }) {
 					</div>
 				</div>
 			</Accordion.Trigger>
-			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto max-h-[440px] bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
+			<Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-x-auto bg-white dark:bg-black text-black dark:text-white border-b border-surface1">
 				<div className="text-[15px]">
 					<iframe
 						srcDoc={sanitizedHtml}
-						className="w-full h-[640px] border-0"
+						className="w-full border-0"
+						height="500"
 						sandbox=""
 					/>
 				</div>
@@ -55,6 +56,6 @@ export default function Email({ email }: { email: EmailType }) {
 
 function sanitize(html: string, text?: string) {
 	return initialSanitize(html, text, {
-		rewriteExternalResources: (url) => `https://wsrv.nl/?url=${url}`
+		rewriteExternalResources: (url) => `https://wsrv.nl/?url=${url}`,
 	});
 }
