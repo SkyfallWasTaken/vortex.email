@@ -13,14 +13,17 @@ import { useCallback, useEffect, useState } from "react";
 import Email from "~/components/home/email";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
 
+const title = "Vortex - Free, disposable email addresses";
+const description = "Vortex is a free, disposable email address service that allows you to create temporary email addresses for privacy and spam protection. Use it to receive emails without revealing your real address.";
 export function meta() {
 	return [
-		{ title: "Vortex - Free, disposable email addresses" },
+		{ title },
 		{
 			name: "description",
-			content:
-				"Free, disposable email addresses for annoying newsletters, websites, and everything in between! Protect your privacy and avoid spam with temporary email addresses.",
+			content: description,
 		},
+		{ property: "og:description", content: description },
+		{ property: "og:title", content: title },
 	];
 }
 
