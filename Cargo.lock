@@ -1065,6 +1065,7 @@ dependencies = [
  "combine",
  "futures-util",
  "itoa",
+ "native-tls",
  "num-bigint",
  "percent-encoding",
  "pin-project-lite",
@@ -1072,6 +1073,7 @@ dependencies = [
  "sha1_smol",
  "socket2",
  "tokio",
+ "tokio-native-tls",
  "tokio-util",
  "url",
 ]
@@ -1889,7 +1891,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vortex-server"
-version = "0.4.2"
+version = "0.4.4"
 dependencies = [
  "axum",
  "chrono",
