@@ -35,7 +35,7 @@ export default function Email({ email }: { email: EmailType }) {
 							</span>
 						</div>
 						<p className="truncate text-[14px] text-gray-700 dark:text-gray-300">
-							{subject || "No subject"}
+							{subject?.substring(0, 120) || "No subject"}
 						</p>
 					</div>
 				</div>
