@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-const lastUpdated = "April 8, 2025";
+const lastUpdated = "April 25, 2025";
 
 export function meta() {
 	return [
@@ -146,7 +146,7 @@ export default function Terms() {
 			<h2 id="8-privacy">8. Privacy</h2>
 			<p>
 				8.1 Our Privacy Policy, available at{" "}
-				<Link to="/privacy">vortex.skyfall.dev/privacy</Link>, describes how we
+				<Link to="/legal/privacy">vortex.skyfall.dev/legal/privacy</Link>, describes how we
 				handle the information you provide to us when you use our Service. By
 				using Vortex, you agree to our collection and use of information in
 				accordance with the Privacy Policy.
