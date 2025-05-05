@@ -46,7 +46,7 @@ export default function Email({ email }: { email: EmailType }) {
 						srcDoc={sanitizedHtml}
 						className="w-full border-0"
 						height="500"
-						sandbox=""
+						sandbox="allow-popups"
 					/>
 				</div>
 			</Accordion.Content>
