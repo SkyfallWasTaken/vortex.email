@@ -34,7 +34,7 @@ export default function Email({ email }: { email: EmailType }) {
 								{date}
 							</span>
 						</div>
-						<p className="break-all sm:truncate text-[14px] text-gray-700 dark:text-gray-300">
+						<p className="break-all sm:truncate text-[14px] text-gray-300">
 							{subject || "(no subject)"}
 						</p>
 					</div>
