@@ -31,6 +31,7 @@ export function meta() {
 export default function Home() {
 	const [email, setEmail] = useState<string | null>(null);
 	const [apiToken, setApiToken] = useState<string | null>(null);
+	const [firstCall, setFirstCall] = useState(true);
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
@@ -78,6 +79,7 @@ export default function Home() {
 			return fetch(url.toString())
 				.then((res) => {
 					if (!res.ok) {
+						setFirstCall(false);
 						if (res.status === 401 || res.status === 403) {
 							console.log("Auth failed, clearing API token");
 							setApiToken(null);
@@ -95,7 +97,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email && apiToken !== null,
+		enabled: !!email && (firstCall || apiToken !== null),
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state
