@@ -192,13 +192,27 @@ async fn store_email_in_redis(
 // lua script that ensures the key exists as an empty sorted set and returns all emails
 // what's the point, you ask? this way we can ensure that the key exists and is a sorted set
 // - *in a single roundtrip!*
+//
+// you might also ask - why the sentinel? because we want to ensure that the key is not empty
+// as otherwise redis will remove the key when we try to read it
 const ENSURE_ZSET_SCRIPT: &str = r#"
     local key = KEYS[1]
-    if redis.call('EXISTS', key) == 0 then
-        redis.call('ZADD', key, 0, 'temp')
-        redis.call('ZREM', key, 'temp')
+    local sentinel = ARGV[1]
+
+    -- Add sentinel member if it doesn't exist (and thus create the key)
+    redis.call('ZADD', key, 'NX', -1, sentinel)
+
+    -- Fetch everything newest-first
+    local all = redis.call('ZREVRANGE', key, 0, -1)
+
+    -- Remove sentinel from the result set
+    for i = #all, 1, -1 do
+        if all[i] == sentinel then
+            table.remove(all, i)
+        end
     end
-    return redis.call('ZREVRANGE', key, 0, -1)
+
+    return all
 "#;
 
 #[tracing::instrument(skip(state))]
@@ -214,8 +228,10 @@ async fn get_emails(
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
 
+    let sentinel = "__empty__";
     let email_jsons: Vec<String> = redis::Script::new(ENSURE_ZSET_SCRIPT)
         .key(&key)
+        .arg(sentinel)
         .invoke_async(&mut conn)
         .await
         .map_err(|e| {
