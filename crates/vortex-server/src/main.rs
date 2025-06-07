@@ -8,6 +8,7 @@ use axum::{
     Json, Router,
 };
 use base64::{engine::general_purpose, Engine as _};
+use cf_turnstile::{SiteVerifyRequest, TurnstileClient};
 use color_eyre::{eyre::Context, Result};
 use email_address_parser::EmailAddress;
 use redis::{aio::MultiplexedConnection, AsyncCommands, Client, RedisResult};
@@ -38,13 +39,6 @@ struct TurnstileVerifyRequest {
 #[derive(Debug, Serialize)]
 struct TurnstileVerifyResponse {
     api_token: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct CloudflareTurnstileResponse {
-    success: bool,
-    #[serde(rename = "error-codes")]
-    error_codes: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -431,38 +425,29 @@ async fn verify_turnstile(
         }
     };
 
-    // Verify with Cloudflare
-    let client = reqwest::Client::new();
-    let params = [
-        ("secret", turnstile_secret.as_str()),
-        ("response", &request.token),
-    ];
+    let client = TurnstileClient::new(turnstile_secret.to_string().into());
 
-    let cloudflare_response = client
-        .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
-        .form(&params)
-        .send()
+    let validated = match client
+        .siteverify(SiteVerifyRequest {
+            response: request.token.to_string(),
+            ..Default::default()
+        })
         .await
-        .map_err(|e| {
-            tracing::error!(error = %e, "Failed to verify Turnstile token with Cloudflare");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?
-        .json::<CloudflareTurnstileResponse>()
-        .await
-        .map_err(|e| {
-            tracing::error!(error = %e, "Failed to parse Cloudflare response");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    {
+        Ok(response) => response,
+        Err(e) => {
+            tracing::error!(error = %e, "Turnstile verification failed");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
 
-    if !cloudflare_response.success {
-        tracing::warn!(error_codes = ?cloudflare_response.error_codes, "Turnstile verification failed");
+    if !validated.success {
+        tracing::warn!(error_codes = ?validated.cdata, "Turnstile verification failed");
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Generate API token
     let api_token = general_purpose::URL_SAFE_NO_PAD.encode(Uuid::new_v4().as_bytes());
 
-    // Store token in Redis with 12-hour TTL
     let mut conn = state.redis_conn.lock().await.clone();
     let token_key = format!("api_token:{}", api_token);
     let ttl_seconds = 12 * 60 * 60; // 12 hours
