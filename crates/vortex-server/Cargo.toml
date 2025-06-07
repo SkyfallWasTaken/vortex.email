@@ -26,7 +26,10 @@ uuid = { version = "1.17.0", features = ["v4"] }
 base64 = "0.22.1"
 urlencoding = "2.1.3"
 reqwest = { version = "0.12.19", features = ["json"] }
-cf-turnstile = "0.2.0"
+cf-turnstile = { default-features = false, features = [
+    "rustls-webpki-roots",
+], version = "0.2" }
+
 
 [lints]
 workspace = true
