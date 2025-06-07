@@ -59,13 +59,7 @@ export default function Home() {
 		queryKey: ["emails", email, apiToken],
 		queryFn: () => {
 			const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
-			const url = new URL(
-				`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`,
-			);
-
-			if (siteKey && apiToken) {
-				url.searchParams.append("api_token", apiToken);
-			}
+			const url = `${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`;
 
 			console.log(
 				"Fetching emails for:",
@@ -76,7 +70,9 @@ export default function Home() {
 				!!apiToken,
 			);
 
-			return fetch(url.toString())
+			return fetch(url, {
+				credentials: "include",
+			})
 				.then((res) => {
 					if (!res.ok) {
 						setFirstCall(false);
@@ -160,7 +156,7 @@ export default function Home() {
 							))}
 						</Accordion.Root>
 						{/* Ensure email is not null before passing to ClearAllEmails */}
-						{email && <ClearAllEmails email={email} apiToken={apiToken} />}
+						{email && <ClearAllEmails email={email} />}
 					</div>
 				) : (
 					<TurnstileManager onTokenGenerated={setApiToken} />
@@ -170,10 +166,7 @@ export default function Home() {
 	);
 }
 
-function ClearAllEmails({
-	email,
-	apiToken,
-}: { email: string; apiToken: string | null }) {
+function ClearAllEmails({ email }: { email: string }) {
 	// email prop is guaranteed non-null here by parent logic
 	const queryClient = useQueryClient();
 
@@ -183,17 +176,11 @@ function ClearAllEmails({
 				type="button"
 				className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
 				onClick={async () => {
-					const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
-					const url = new URL(
-						`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`,
-					);
+					const url = `${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`;
 
-					if (siteKey && apiToken) {
-						url.searchParams.append("api_token", apiToken);
-					}
-
-					await fetch(url.toString(), {
+					await fetch(url, {
 						method: "DELETE",
+						credentials: "include",
 					});
 					queryClient.setQueryData(["emails", email], []);
 				}}
