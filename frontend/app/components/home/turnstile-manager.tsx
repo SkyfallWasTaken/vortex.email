@@ -1,4 +1,5 @@
 import { Turnstile } from "@marsidev/react-turnstile";
+import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 import { useCallback, useEffect, useState } from "react";
 import { LuInbox, LuTriangleAlert } from "react-icons/lu";
 
@@ -14,6 +15,10 @@ export default function TurnstileManager({
 	const [dots, setDots] = useState(".");
 
 	const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
+
+	useEffect(() => {
+		console.time("turnstile");
+	}, []);
 
 	useEffect(() => {
 		console.log(
@@ -57,6 +62,7 @@ export default function TurnstileManager({
 					setApiToken(data.api_token);
 					onTokenGenerated(data.api_token);
 					setTurnstileError(null);
+					console.timeEnd("turnstile");
 				} else {
 					console.log(
 						"TurnstileManager: Verification failed with status:",
