@@ -1,6 +1,4 @@
 use std::fmt::Display;
-use std::future::Future;
-use std::pin::Pin;
 
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
@@ -43,14 +41,10 @@ pub struct State {
     data: Vec<u8>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
-async fn process<T, F>(
+async fn process<T: Send + Fn(&str) -> bool>(
     mut socket: TcpStream,
     is_email_valid: T,
-) -> Result<State, Error> 
-where
-    T: Fn(&str) -> F + Send,
-    F: Future<Output = bool> + Send,
-{
+) -> Result<State, Error> {
     let mut buf = vec![0; consts::MAX_SIZE];
     tracing::debug!("processing connection");
 
@@ -158,7 +152,7 @@ where
 
                     let email = email.to_string();
                     let email = email.trim();
-                    if !is_email_valid(email).await {
+                    if !is_email_valid(email) {
                         tracing::trace!("email incoming, but recipient is invalid");
                         socket.write_all(messages::USER_UNKNOWN).await?;
                         continue;
@@ -215,12 +209,11 @@ pub struct Email {
     pub id: String,
 }
 
-pub async fn listen<A, F, Fut, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
+pub async fn listen<A, F, G>(addr: A, validate_email: F, handle_event: G) -> Result<(), Error>
 where
     A: ToSocketAddrs + Display + Copy + Send,
-    F: Fn(&str) -> Fut + Send + Sync + Clone + 'static,
-    Fut: Future<Output = bool> + Send + 'static,
-    G: Fn(Event) + Send + Sync + Clone + 'static,
+    F: Fn(&str) -> bool + Send + Sync + Clone + 'static, // Added Clone here
+    G: Fn(Event) + Send + Sync + Clone + 'static,        // Added Clone here
 {
     let listener = TcpListener::bind(addr).await.map_err(Error::NetworkError)?;
 
