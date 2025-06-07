@@ -1,5 +1,4 @@
 import { Turnstile } from "@marsidev/react-turnstile";
-import { c } from "node_modules/vite/dist/node/moduleRunnerTransport.d-CXw_Ws6P";
 import { useCallback, useEffect, useState } from "react";
 import { LuInbox, LuTriangleAlert } from "react-icons/lu";
 
