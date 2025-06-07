@@ -14,7 +14,8 @@ import Email from "~/components/home/email";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
 
 const title = "Vortex - Free, disposable email addresses";
-const description = "Vortex is a free, disposable email address service that allows you to create temporary email addresses for privacy and spam protection. Use it to receive emails without revealing your real address.";
+const description =
+	"Vortex is a free, disposable email address service that allows you to create temporary email addresses for privacy and spam protection. Use it to receive emails without revealing your real address.";
 export function meta() {
 	return [
 		{ title },

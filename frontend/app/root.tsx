@@ -39,11 +39,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Meta />
 				<Links />
 				<meta property="og:site_name" content="Vortex" />
-				<meta property="og:image" content="https://vortex.skyfall.dev/opengraph.png" />
+				<meta
+					property="og:image"
+					content="https://vortex.skyfall.dev/opengraph.png"
+				/>
 				<meta property="og:type" content="website" />
 				<meta property="og:locale" content="en_US" />
 				<meta name="twitter:card" content="summary_large_image" />
-				<meta name="twitter:image" content="https://vortex.skyfall.dev/opengraph.png" />
+				<meta
+					name="twitter:image"
+					content="https://vortex.skyfall.dev/opengraph.png"
+				/>
 				<link
 					rel="icon"
 					type="image/png"

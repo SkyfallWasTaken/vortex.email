@@ -146,10 +146,10 @@ export default function Terms() {
 			<h2 id="8-privacy">8. Privacy</h2>
 			<p>
 				8.1 Our Privacy Policy, available at{" "}
-				<Link to="/legal/privacy">vortex.skyfall.dev/legal/privacy</Link>, describes how we
-				handle the information you provide to us when you use our Service. By
-				using Vortex, you agree to our collection and use of information in
-				accordance with the Privacy Policy.
+				<Link to="/legal/privacy">vortex.skyfall.dev/legal/privacy</Link>,
+				describes how we handle the information you provide to us when you use
+				our Service. By using Vortex, you agree to our collection and use of
+				information in accordance with the Privacy Policy.
 			</p>
 			<h2 id="9-termination">9. Termination</h2>
 			<p>

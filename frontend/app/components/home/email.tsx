@@ -11,7 +11,9 @@ export default function Email({ email }: { email: EmailType }) {
 
 	const imageSize = 48;
 	const brandfetchUrl = `https://cdn.brandfetch.io/${domain}/w/256/h/256?c=${import.meta.env.VITE_BRANDFETCH_PUBLIC_KEY}`;
-	const sanitizedHtml = html ? sanitize(html) : `<pre>${sanitize(text || "")}</pre>`;
+	const sanitizedHtml = html
+		? sanitize(html)
+		: `<pre>${sanitize(text || "")}</pre>`;
 
 	return (
 		<Accordion.Item
