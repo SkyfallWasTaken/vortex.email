@@ -15,6 +15,13 @@ export default function TurnstileManager({
 
 	const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
 
+	console.log(
+		"TurnstileManager: siteKey exists:",
+		!!siteKey,
+		"apiToken:",
+		!!apiToken,
+	);
+
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setDots(dots.length < 3 ? `${dots}.` : "");
@@ -24,6 +31,10 @@ export default function TurnstileManager({
 
 	const verifyTurnstile = useCallback(
 		async (token: string) => {
+			console.log(
+				"TurnstileManager: Starting verification with token:",
+				`${token.substring(0, 10)}...`,
+			);
 			try {
 				const response = await fetch(
 					`${import.meta.env.VITE_API_ENDPOINT}/verify-turnstile`,
@@ -38,13 +49,21 @@ export default function TurnstileManager({
 
 				if (response.ok) {
 					const data = await response.json();
+					console.log(
+						"TurnstileManager: Verification successful, got API token",
+					);
 					setApiToken(data.api_token);
 					onTokenGenerated(data.api_token);
 					setTurnstileError(null);
 				} else {
+					console.log(
+						"TurnstileManager: Verification failed with status:",
+						response.status,
+					);
 					throw new Error("Verification failed");
 				}
-			} catch {
+			} catch (error) {
+				console.log("TurnstileManager: Verification error:", error);
 				setTurnstileError("Verification failed. Please try again.");
 				setApiToken(null);
 			}
@@ -54,17 +73,20 @@ export default function TurnstileManager({
 
 	const handleTurnstileSuccess = useCallback(
 		(token: string) => {
+			console.log("TurnstileManager: Turnstile success callback triggered");
 			verifyTurnstile(token);
 		},
 		[verifyTurnstile],
 	);
 
 	const handleTurnstileError = useCallback(() => {
+		console.log("TurnstileManager: Turnstile error callback triggered");
 		setTurnstileError("Unable to verify. Please check your connection.");
 		setApiToken(null);
 	}, []);
 
 	const handleTurnstileExpire = useCallback(() => {
+		console.log("TurnstileManager: Turnstile expire callback triggered");
 		setApiToken(null);
 		setTurnstileError(null);
 	}, []);
