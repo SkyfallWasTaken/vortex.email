@@ -33,5 +33,6 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@beta
         with:
+          allowed_tools: "Bash(*),Bash(chmod:*),Bash(git:*),Bash(bun:*),Bash(bun test:*),Bash(bun run:*),Bash(bun run build),Bash(bun install),Bash(cargo:*),Edit,View,GlobTool,GrepTool,BatchTool,Write,WebFetch,WebSearch"
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
