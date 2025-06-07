@@ -71,7 +71,7 @@ async fn server_main() -> Result<()> {
             move |email| {
                 let state = smtp_validator_state.clone();
                 let email_str = email.to_string();
-                validate_vortex_email(&email_str, &state.allowed_domains)
+                validate_vortex_email_with_redis(&email_str, &state)
             },
             move |event| {
                 #[allow(irrefutable_let_patterns)]
@@ -250,6 +250,25 @@ fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
     allowed_domains
         .iter()
         .any(|domain| parsed.domain() == *domain)
+}
+
+async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool {
+    if !validate_vortex_email(email, &state.allowed_domains) {
+        return false;
+    }
+
+    let key = format!("emails:{}", email);
+    let mut conn = match state.redis_conn.lock().await.clone() {
+        conn => conn,
+    };
+
+    match conn.exists::<_, bool>(&key).await {
+        Ok(exists) => exists,
+        Err(e) => {
+            tracing::error!(error = %e, email = %email, "Failed to check email existence in Redis");
+            false
+        }
+    }
 }
 
 fn main() -> Result<()> {
