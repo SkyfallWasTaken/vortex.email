@@ -2,8 +2,12 @@ use std::env;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Path, Query, State},
-    http::{HeaderValue, Method, StatusCode},
+    extract::{Path, Query, Request, State},
+    http::{
+        header::{COOKIE, SET_COOKIE},
+        HeaderValue, Method, StatusCode,
+    },
+    response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
 };
@@ -46,6 +50,37 @@ struct ApiTokenQuery {
     api_token: Option<String>,
 }
 
+fn extract_api_token_from_request<T>(req: &axum::http::Request<T>) -> Option<String> {
+    // Try to get api_token from cookies first
+    if let Some(cookie_header) = req.headers().get(COOKIE) {
+        if let Ok(cookie_str) = cookie_header.to_str() {
+            for cookie in cookie_str.split(';') {
+                let cookie = cookie.trim();
+                if let Some(value) = cookie.strip_prefix("api_token=") {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+
+    // Try to get api_token from query parameters (backward compatibility)
+    if let Some(query) = req.uri().query() {
+        for pair in query.split('&') {
+            if let Some((key, value)) = pair.split_once('=') {
+                if key == "api_token" {
+                    return Some(
+                        urlencoding::decode(value)
+                            .unwrap_or_else(|_| value.into())
+                            .to_string(),
+                    );
+                }
+            }
+        }
+    }
+
+    None
+}
+
 #[derive(Clone)]
 struct AppState {
     redis_conn: Arc<Mutex<MultiplexedConnection>>,
@@ -63,7 +98,19 @@ impl KeyExtractor for ApiTokenKeyExtractor {
         &self,
         req: &axum::http::Request<T>,
     ) -> Result<Self::Key, tower_governor::GovernorError> {
-        // Try to get api_token from query parameters
+        // Try to get api_token from cookies first
+        if let Some(cookie_header) = req.headers().get(COOKIE) {
+            if let Ok(cookie_str) = cookie_header.to_str() {
+                for cookie in cookie_str.split(';') {
+                    let cookie = cookie.trim();
+                    if let Some(value) = cookie.strip_prefix("api_token=") {
+                        return Ok(value.to_string());
+                    }
+                }
+            }
+        }
+
+        // Try to get api_token from query parameters (backward compatibility)
         if let Some(query) = req.uri().query() {
             for pair in query.split('&') {
                 if let Some((key, value)) = pair.split_once('=') {
@@ -302,6 +349,7 @@ async fn get_emails(
     State(state): State<AppState>,
     Path(email): Path<String>,
     Query(query): Query<ApiTokenQuery>,
+    request: Request,
 ) -> Result<(StatusCode, Json<Vec<ExtendedEmail>>), StatusCode> {
     if !validate_vortex_email(&email, &state.allowed_domains) {
         tracing::warn!(email, "Invalid domain in GET request");
@@ -336,7 +384,9 @@ async fn get_emails(
     // don't really have an incentive to wrap this API for spam/custom clients, since they
     // can't view the emails without a valid API token anyway.
     if state.turnstile_secret.is_some() {
-        match query.api_token {
+        let api_token = extract_api_token_from_request(&request).or(query.api_token);
+
+        match api_token {
             Some(token) => {
                 if !validate_api_token(&state, &token).await {
                     tracing::warn!("Invalid or expired API token");
@@ -358,6 +408,7 @@ async fn clear_emails(
     State(state): State<AppState>,
     Path(email): Path<String>,
     Query(query): Query<ApiTokenQuery>,
+    request: Request,
 ) -> Result<StatusCode, StatusCode> {
     if !validate_vortex_email(&email, &state.allowed_domains) {
         tracing::warn!(email, "Invalid domain requested for clearing");
@@ -366,7 +417,9 @@ async fn clear_emails(
 
     // Check API token if Turnstile is enabled
     if state.turnstile_secret.is_some() {
-        match query.api_token {
+        let api_token = extract_api_token_from_request(&request).or(query.api_token);
+
+        match api_token {
             Some(token) => {
                 if !validate_api_token(&state, &token).await {
                     tracing::warn!("Invalid or expired API token");
@@ -424,7 +477,7 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
 async fn verify_turnstile(
     State(state): State<AppState>,
     Json(request): Json<TurnstileVerifyRequest>,
-) -> Result<Json<TurnstileVerifyResponse>, StatusCode> {
+) -> Result<Response, StatusCode> {
     let turnstile_secret = match &state.turnstile_secret {
         Some(secret) => secret,
         None => {
@@ -469,7 +522,19 @@ async fn verify_turnstile(
         })?;
 
     tracing::info!("API token generated and stored");
-    Ok(Json(TurnstileVerifyResponse { api_token }))
+
+    // Set cookie with the API token
+    let cookie_value = format!(
+        "api_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}",
+        api_token, ttl_seconds
+    );
+
+    Ok((
+        StatusCode::OK,
+        [(SET_COOKIE, cookie_value)],
+        Json(TurnstileVerifyResponse { api_token }),
+    )
+        .into_response())
 }
 
 async fn validate_api_token(state: &AppState, token: &str) -> bool {

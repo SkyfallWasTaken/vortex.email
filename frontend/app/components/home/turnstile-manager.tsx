@@ -40,17 +40,16 @@ export default function TurnstileManager({
 						headers: {
 							"Content-Type": "application/json",
 						},
+						credentials: "include",
 						body: JSON.stringify({ token }),
 					},
 				);
 
 				if (response.ok) {
-					const data = await response.json();
-					console.log(
-						"TurnstileManager: Verification successful, got API token",
-					);
-					setApiToken(data.api_token);
-					onTokenGenerated(data.api_token);
+					await response.json();
+					console.log("TurnstileManager: Verification successful, cookie set");
+					setApiToken("verified");
+					onTokenGenerated("verified");
 					setTurnstileError(null);
 					console.timeEnd("turnstile");
 				} else {
@@ -111,22 +110,31 @@ export default function TurnstileManager({
 		);
 	}
 
+	if (apiToken) {
+		return <NoEmailsFound dots={dots} />;
+	}
+
 	return (
-		<>
-			{siteKey && !apiToken && (
-				<Turnstile
-					siteKey={siteKey}
-					onSuccess={handleTurnstileSuccess}
-					onError={handleTurnstileError}
-					onExpire={handleTurnstileExpire}
-					options={{
-						theme: "auto",
-						size: "invisible",
-					}}
-				/>
-			)}
-			<NoEmailsFound dots={dots} />
-		</>
+		<div className="flex flex-col justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto">
+			<div className="flex flex-col items-center gap-2 w-full">
+				<h2 className="text-xl font-medium text-center">
+					Verifying your session
+				</h2>
+				<p className="text-base text-text/80 text-center">
+					This helps prevent abuse. Please wait a couple seconds{dots}
+				</p>
+			</div>
+			<Turnstile
+				siteKey={siteKey}
+				onSuccess={handleTurnstileSuccess}
+				onError={handleTurnstileError}
+				onExpire={handleTurnstileExpire}
+				options={{
+					theme: "dark",
+					size: "normal",
+				}}
+			/>
+		</div>
 	);
 }
 
