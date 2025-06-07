@@ -71,7 +71,9 @@ async fn server_main() -> Result<()> {
             move |email| {
                 let state = smtp_validator_state.clone();
                 let email_str = email.to_string();
-                validate_vortex_email(&email_str, &state.allowed_domains)
+                async move {
+                    validate_vortex_email_with_redis(&email_str, &state).await
+                }
             },
             move |event| {
                 #[allow(irrefutable_let_patterns)]
@@ -159,7 +161,6 @@ async fn store_email_in_redis(
 
     let key = format!("emails:{}", recipient);
 
-    // Parse the timestamp string back into a DateTime object to get the Unix timestamp
     let timestamp_dt = chrono::DateTime::parse_from_rfc3339(timestamp)
         .map_err(|e| {
             redis::RedisError::from((
@@ -183,7 +184,6 @@ async fn store_email_in_redis(
         ))
     })?;
 
-    // Use ZADD instead of RPUSH, with the Unix timestamp as the score
     let _: () = conn.zadd(&key, json, score).await?;
 
     Ok(())
@@ -250,6 +250,31 @@ fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
     allowed_domains
         .iter()
         .any(|domain| parsed.domain() == *domain)
+}
+
+async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool {
+    // First check domain validity
+    if !validate_vortex_email(email, &state.allowed_domains) {
+        return false;
+    }
+
+    // Then get the Redis conn
+    let key = format!("emails:{}", email);
+    let mut conn = match state.redis_conn.lock().await.clone() {
+        conn => conn,
+    };
+
+    match redis::cmd("EXISTS")
+        .arg(&key)
+        .query_async::<_, i32>(&mut conn)
+        .await
+    {
+        Ok(exists) => exists > 0,
+        Err(e) => {
+            tracing::error!(email, error = %e, "Failed to check email existence in Redis");
+            false
+        }
+    }
 }
 
 fn main() -> Result<()> {
