@@ -161,7 +161,6 @@ async fn store_email_in_redis(
 
     let key = format!("emails:{}", recipient);
 
-    // Parse the timestamp string back into a DateTime object to get the Unix timestamp
     let timestamp_dt = chrono::DateTime::parse_from_rfc3339(timestamp)
         .map_err(|e| {
             redis::RedisError::from((
@@ -185,7 +184,6 @@ async fn store_email_in_redis(
         ))
     })?;
 
-    // Use ZADD instead of RPUSH, with the Unix timestamp as the score
     let _: () = conn.zadd(&key, json, score).await?;
 
     Ok(())
@@ -260,13 +258,12 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
         return false;
     }
 
-    // Then check if email exists in Redis
+    // Then get the Redis conn
     let key = format!("emails:{}", email);
     let mut conn = match state.redis_conn.lock().await.clone() {
         conn => conn,
     };
 
-    // Check if the key exists in Redis
     match redis::cmd("EXISTS")
         .arg(&key)
         .query_async::<_, i32>(&mut conn)
