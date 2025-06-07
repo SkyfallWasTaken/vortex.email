@@ -15,12 +15,14 @@ export default function TurnstileManager({
 
 	const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
 
-	console.log(
-		"TurnstileManager: siteKey exists:",
-		!!siteKey,
-		"apiToken:",
-		!!apiToken,
-	);
+	useEffect(() => {
+		console.log(
+			"TurnstileManager: siteKey exists:",
+			!!siteKey,
+			"apiToken:",
+			!!apiToken,
+		);
+	}, [siteKey, apiToken]);
 
 	useEffect(() => {
 		const interval = setInterval(() => {
