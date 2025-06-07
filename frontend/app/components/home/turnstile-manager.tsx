@@ -6,9 +6,8 @@ interface TurnstileManagerProps {
 	onTokenGenerated: () => void;
 }
 
-const getCookieValue = (name: string) => (
-	document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''
-)
+const getCookieValue = (name: string) =>
+	document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)")?.pop() || "";
 
 export default function TurnstileManager({
 	onTokenGenerated,
@@ -23,7 +22,9 @@ export default function TurnstileManager({
 		// is the cookie already set?
 		const existingToken = getCookieValue("api_token");
 		if (existingToken) {
-			console.log("TurnstileManager: Cookie already set, skipping verification");
+			console.log(
+				"TurnstileManager: Cookie already set, skipping verification",
+			);
 			setApiTokenSet(true);
 			onTokenGenerated();
 			setTurnstileError(null);
@@ -138,7 +139,9 @@ export default function TurnstileManager({
 					Loading your mailbox...
 				</h2>
 				<p className="text-base text-text/80 text-center">
-					Please wait a couple seconds{dots}<br /><i>(you can use this email whilst you wait!)</i>
+					Please wait a couple seconds{dots}
+					<br />
+					<i>(you can use this email whilst you wait!)</i>
 				</p>
 			</div>
 			<Turnstile
