@@ -1,7 +1,6 @@
 import {
 	LuCopy,
 	LuCopyCheck,
-	LuInbox,
 	LuLoaderCircle,
 	LuRefreshCcw,
 } from "react-icons/lu";
@@ -11,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
 import Email from "~/components/home/email";
+import TurnstileManager from "~/components/home/turnstile-manager";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
 
 const title = "Vortex - Free, disposable email addresses";
@@ -30,6 +30,7 @@ export function meta() {
 
 export default function Home() {
 	const [email, setEmail] = useState<string | null>(null);
+	const [apiToken, setApiToken] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
@@ -54,11 +55,24 @@ export default function Home() {
 	}, [queryClient]);
 
 	const { isPending, error, data } = useQuery<EmailType[]>({
-		queryKey: ["emails", email],
+		queryKey: ["emails", email, apiToken],
 		queryFn: () => {
-			return fetch(`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`)
+			const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
+			const url = new URL(
+				`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`,
+			);
+
+			if (siteKey && apiToken) {
+				url.searchParams.append("api_token", apiToken);
+			}
+
+			return fetch(url.toString())
 				.then((res) => {
 					if (!res.ok) {
+						if (res.status === 401 || res.status === 403) {
+							setApiToken(null);
+							throw new Error("Authentication failed - please verify again");
+						}
 						throw new Error(`HTTP error! status: ${res.status}`);
 					}
 					return res.json() as Promise<EmailType[]>;
@@ -71,7 +85,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email, // Only run the query when email is not null
+		enabled: !!email && (!import.meta.env.VITE_TURNSTILE_SITEKEY || !!apiToken),
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state
@@ -134,47 +148,20 @@ export default function Home() {
 							))}
 						</Accordion.Root>
 						{/* Ensure email is not null before passing to ClearAllEmails */}
-						{email && <ClearAllEmails email={email} />}
+						{email && <ClearAllEmails email={email} apiToken={apiToken} />}
 					</div>
 				) : (
-					<NoEmailsFound /> // Show if not loading, no error, and data is empty
+					<TurnstileManager onTokenGenerated={setApiToken} />
 				)}
 			</div>
 		</div>
 	);
 }
 
-function NoEmailsFound() {
-	const [dots, setDots] = useState(".");
-	useEffect(() => {
-		const interval = setInterval(() => {
-			// biome-ignore lint/style/useTemplate: just makes things harder to read
-			setDots(dots.length < 3 ? dots + "." : "");
-		}, 500);
-		return () => clearInterval(interval);
-	}, [dots]);
-
-	return (
-		<div className="flex justify-center items-center gap-4 border border-surface0 bg-surface0/30 px-4 py-6 rounded w-full md:w-1/2 mx-auto">
-			<LuInbox
-				size={64}
-				strokeWidth={1.25}
-				className="w-1/4 md:w-1/5 min-w-1/4 animate-pulse"
-			/>
-			<div className="flex flex-col gap-0.5 w-3/4 md:w-4/5 min-w-3/4">
-				<h2 className="text-xl font-medium flex items-end space-x-2">
-					<span>Waiting for emails{dots}</span>
-				</h2>
-
-				<p className="text-base text-text/80">
-					Copy your email address and start using it to receive messages
-				</p>
-			</div>
-		</div>
-	);
-}
-
-function ClearAllEmails({ email }: { email: string }) {
+function ClearAllEmails({
+	email,
+	apiToken,
+}: { email: string; apiToken: string | null }) {
 	// email prop is guaranteed non-null here by parent logic
 	const queryClient = useQueryClient();
 
@@ -184,12 +171,18 @@ function ClearAllEmails({ email }: { email: string }) {
 				type="button"
 				className="text-center border border-surface0 rounded hover:bg-red-500 hover:text-base px-4 py-2 w-full transition duration-350 font-semibold"
 				onClick={async () => {
-					await fetch(
+					const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
+					const url = new URL(
 						`${import.meta.env.VITE_API_ENDPOINT}/emails/${email}/clear`,
-						{
-							method: "DELETE",
-						},
 					);
+
+					if (siteKey && apiToken) {
+						url.searchParams.append("api_token", apiToken);
+					}
+
+					await fetch(url.toString(), {
+						method: "DELETE",
+					});
 					queryClient.setQueryData(["emails", email], []);
 				}}
 			>

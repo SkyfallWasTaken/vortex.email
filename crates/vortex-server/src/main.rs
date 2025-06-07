@@ -2,19 +2,22 @@ use std::env;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderValue, Method, StatusCode},
-    routing::{delete, get},
+    routing::{delete, get, post},
     Json, Router,
 };
+use base64::{engine::general_purpose, Engine as _};
 use color_eyre::{eyre::Context, Result};
 use email_address_parser::EmailAddress;
 use redis::{aio::MultiplexedConnection, AsyncCommands, Client, RedisResult};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
+use tower_governor::{governor::GovernorConfigBuilder, key_extractor::KeyExtractor, GovernorLayer};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use uuid::Uuid;
 
 use vortex_smtp::{event::Event, Email};
 
@@ -27,10 +30,74 @@ struct ExtendedEmail {
     timestamp: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct TurnstileVerifyRequest {
+    token: String,
+}
+
+#[derive(Debug, Serialize)]
+struct TurnstileVerifyResponse {
+    api_token: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CloudflareTurnstileResponse {
+    success: bool,
+    #[serde(rename = "error-codes")]
+    error_codes: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiTokenQuery {
+    api_token: Option<String>,
+}
+
 #[derive(Clone)]
 struct AppState {
     redis_conn: Arc<Mutex<MultiplexedConnection>>,
     allowed_domains: Arc<Vec<String>>,
+    turnstile_secret: Option<String>,
+}
+
+#[derive(Clone)]
+struct ApiTokenKeyExtractor;
+
+impl KeyExtractor for ApiTokenKeyExtractor {
+    type Key = String;
+
+    fn extract<T>(
+        &self,
+        req: &axum::http::Request<T>,
+    ) -> Result<Self::Key, tower_governor::GovernorError> {
+        // Try to get api_token from query parameters
+        if let Some(query) = req.uri().query() {
+            for pair in query.split('&') {
+                if let Some((key, value)) = pair.split_once('=') {
+                    if key == "api_token" {
+                        return Ok(urlencoding::decode(value)
+                            .unwrap_or_else(|_| value.into())
+                            .to_string());
+                    }
+                }
+            }
+        }
+
+        // Fallback to IP address for requests without API tokens
+        let fallback_key = req
+            .headers()
+            .get("x-forwarded-for")
+            .and_then(|hv| hv.to_str().ok())
+            .map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
+            .or_else(|| {
+                req.headers()
+                    .get("x-real-ip")
+                    .and_then(|hv| hv.to_str().ok())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or_else(|| "unknown".to_string());
+
+        Ok(fallback_key)
+    }
 }
 
 #[tracing::instrument]
@@ -40,6 +107,7 @@ async fn server_main() -> Result<()> {
     let allowed_domains: Arc<Vec<String>> =
         Arc::new(allowed_domains.split(',').map(String::from).collect());
     let frontend_domain = env::var("FRONTEND_DOMAIN").wrap_err("FRONTEND_DOMAIN must be set")?;
+    let turnstile_secret = env::var("TURNSTILE_SECRET").ok();
 
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let redis_client = Client::open(redis_url.clone())
@@ -60,6 +128,7 @@ async fn server_main() -> Result<()> {
     let app_state = AppState {
         redis_conn: Arc::new(Mutex::new(redis_conn)),
         allowed_domains,
+        turnstile_secret,
     };
 
     let smtp_validator_state = app_state.clone();
@@ -110,12 +179,22 @@ async fn server_main() -> Result<()> {
     let http_state = app_state.clone();
     let http_server = tokio::spawn(async move {
         let cors = CorsLayer::new()
-            .allow_methods([Method::GET, Method::DELETE])
+            .allow_methods([Method::GET, Method::DELETE, Method::POST])
             .allow_origin(
                 frontend_domain
                     .parse::<HeaderValue>()
                     .wrap_err("Invalid FRONTEND_DOMAIN")?,
             );
+
+        // Set up rate limiting - 30 requests per minute
+        let governor_conf = Arc::new(
+            GovernorConfigBuilder::default()
+                .per_second(1) // 30 requests per minute = 0.5 per second, but we'll use burst
+                .burst_size(30) // Allow bursts up to 30 requests
+                .key_extractor(ApiTokenKeyExtractor)
+                .finish()
+                .unwrap(),
+        );
 
         let router = Router::new()
             .route(
@@ -124,7 +203,11 @@ async fn server_main() -> Result<()> {
             )
             .route("/emails/{email}", get(get_emails))
             .route("/emails/{email}/clear", delete(clear_emails))
+            .route("/verify-turnstile", post(verify_turnstile))
             .with_state(http_state)
+            .layer(GovernorLayer {
+                config: governor_conf,
+            })
             .layer(cors);
 
         let listener = TcpListener::bind(HTTP_ADDR)
@@ -219,10 +302,27 @@ const ENSURE_ZSET_SCRIPT: &str = r#"
 async fn get_emails(
     State(state): State<AppState>,
     Path(email): Path<String>,
+    Query(query): Query<ApiTokenQuery>,
 ) -> Result<(StatusCode, Json<Vec<ExtendedEmail>>), StatusCode> {
     if !validate_vortex_email(&email, &state.allowed_domains) {
         tracing::warn!(email, "Invalid domain in GET request");
         return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Check API token if Turnstile is enabled
+    if state.turnstile_secret.is_some() {
+        match query.api_token {
+            Some(token) => {
+                if !validate_api_token(&state, &token).await {
+                    tracing::warn!("Invalid or expired API token");
+                    return Err(StatusCode::UNAUTHORIZED);
+                }
+            }
+            None => {
+                tracing::warn!("API token required but not provided");
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+        }
     }
 
     let key = format!("emails:{}", email);
@@ -251,10 +351,27 @@ async fn get_emails(
 async fn clear_emails(
     State(state): State<AppState>,
     Path(email): Path<String>,
+    Query(query): Query<ApiTokenQuery>,
 ) -> Result<StatusCode, StatusCode> {
     if !validate_vortex_email(&email, &state.allowed_domains) {
         tracing::warn!(email, "Invalid domain requested for clearing");
         return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Check API token if Turnstile is enabled
+    if state.turnstile_secret.is_some() {
+        match query.api_token {
+            Some(token) => {
+                if !validate_api_token(&state, &token).await {
+                    tracing::warn!("Invalid or expired API token");
+                    return Err(StatusCode::UNAUTHORIZED);
+                }
+            }
+            None => {
+                tracing::warn!("API token required but not provided");
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+        }
     }
 
     let key = format!("emails:{}", email);
@@ -292,6 +409,80 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
         Ok(exists) => exists,
         Err(e) => {
             tracing::error!(email, error = %e, "Failed to check email existence in Redis");
+            false
+        }
+    }
+}
+
+#[tracing::instrument(skip(state))]
+async fn verify_turnstile(
+    State(state): State<AppState>,
+    Json(request): Json<TurnstileVerifyRequest>,
+) -> Result<Json<TurnstileVerifyResponse>, StatusCode> {
+    let turnstile_secret = match &state.turnstile_secret {
+        Some(secret) => secret,
+        None => {
+            tracing::warn!("Turnstile verification requested but TURNSTILE_SECRET not set");
+            return Err(StatusCode::SERVICE_UNAVAILABLE);
+        }
+    };
+
+    // Verify with Cloudflare
+    let client = reqwest::Client::new();
+    let params = [
+        ("secret", turnstile_secret.as_str()),
+        ("response", &request.token),
+    ];
+
+    let cloudflare_response = client
+        .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to verify Turnstile token with Cloudflare");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .json::<CloudflareTurnstileResponse>()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to parse Cloudflare response");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !cloudflare_response.success {
+        tracing::warn!(error_codes = ?cloudflare_response.error_codes, "Turnstile verification failed");
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Generate API token
+    let api_token = general_purpose::URL_SAFE_NO_PAD.encode(Uuid::new_v4().as_bytes());
+
+    // Store token in Redis with 12-hour TTL
+    let mut conn = state.redis_conn.lock().await.clone();
+    let token_key = format!("api_token:{}", api_token);
+    let ttl_seconds = 12 * 60 * 60; // 12 hours
+
+    let _: () = conn
+        .set_ex(&token_key, "valid", ttl_seconds)
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to store API token in Redis");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    tracing::info!("API token generated and stored");
+    Ok(Json(TurnstileVerifyResponse { api_token }))
+}
+
+async fn validate_api_token(state: &AppState, token: &str) -> bool {
+    let token_key = format!("api_token:{}", token);
+    let mut conn = state.redis_conn.lock().await.clone();
+
+    match conn.exists::<String, bool>(token_key).await {
+        Ok(exists) => exists,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to validate API token in Redis");
             false
         }
     }
