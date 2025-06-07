@@ -54,7 +54,7 @@ export default function Home() {
 		queryClient.setQueryData(["emails", newEmail], []);
 	}, [queryClient]);
 
-	const { isPending, error, data } = useQuery<EmailType[]>({
+	const { error, data } = useQuery<EmailType[]>({
 		queryKey: ["emails", email, apiToken],
 		queryFn: () => {
 			const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
@@ -66,12 +66,22 @@ export default function Home() {
 				url.searchParams.append("api_token", apiToken);
 			}
 
+			console.log(
+				"Fetching emails for:",
+				email,
+				"with siteKey:",
+				!!siteKey,
+				"apiToken:",
+				!!apiToken,
+			);
+
 			return fetch(url.toString())
 				.then((res) => {
 					if (!res.ok) {
 						if (res.status === 401 || res.status === 403) {
+							console.log("Auth failed, clearing API token");
 							setApiToken(null);
-							throw new Error("Authentication failed - please verify again");
+							return [];
 						}
 						throw new Error(`HTTP error! status: ${res.status}`);
 					}
@@ -85,7 +95,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email && (!import.meta.env.VITE_TURNSTILE_SITEKEY || !!apiToken),
+		enabled: !!email,
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state
@@ -131,7 +141,7 @@ export default function Home() {
 
 			{/* Conditional rendering for email list section */}
 			<div className="mt-6">
-				{email === null || (isPending && !data) ? ( // Show loader if email is null OR initial fetch is pending
+				{email === null ? (
 					<LuLoaderCircle
 						className="h-32 text-blue animate-spin mx-auto"
 						size={48}
