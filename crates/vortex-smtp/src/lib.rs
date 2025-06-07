@@ -1,6 +1,5 @@
 use std::fmt::Display;
 use std::future::Future;
-use std::pin::Pin;
 
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
@@ -43,10 +42,7 @@ pub struct State {
     data: Vec<u8>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
-async fn process<T, F>(
-    mut socket: TcpStream,
-    is_email_valid: T,
-) -> Result<State, Error> 
+async fn process<T, F>(mut socket: TcpStream, is_email_valid: T) -> Result<State, Error>
 where
     T: Fn(&str) -> F + Send,
     F: Future<Output = bool> + Send,
