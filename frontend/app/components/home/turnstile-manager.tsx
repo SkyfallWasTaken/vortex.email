@@ -6,9 +6,6 @@ interface TurnstileManagerProps {
 	onTokenGenerated: () => void;
 }
 
-const getCookieValue = (name: string) =>
-	document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)")?.pop() || "";
-
 export default function TurnstileManager({
 	onTokenGenerated,
 }: TurnstileManagerProps) {
@@ -20,7 +17,7 @@ export default function TurnstileManager({
 
 	useEffect(() => {
 		// is the cookie already set?
-		const existingToken = getCookieValue("api_token");
+		const existingToken = document.cookie.includes("api_token");
 		if (existingToken) {
 			console.log(
 				"TurnstileManager: Cookie already set, skipping verification",
