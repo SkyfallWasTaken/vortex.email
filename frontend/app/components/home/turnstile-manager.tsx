@@ -20,7 +20,17 @@ export default function TurnstileManager({
 	const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
 
 	useEffect(() => {
-		console.time("turnstile");
+		// is the cookie already set?
+		const existingToken = getCookieValue("api_token");
+		if (existingToken) {
+			console.log("TurnstileManager: Cookie already set, skipping verification");
+			setApiTokenSet(true);
+			onTokenGenerated();
+			setTurnstileError(null);
+		} else {
+			console.log("TurnstileManager: Cookie not set, starting verification");
+			console.time("turnstile");
+		}
 	}, []);
 
 	useEffect(() => {
@@ -36,15 +46,6 @@ export default function TurnstileManager({
 				"TurnstileManager: Starting verification with token:",
 				`${token.substring(0, 10)}...`,
 			);
-			// is the cookie already set?
-			const existingToken = getCookieValue("api_token");
-			if (existingToken) {
-				console.log("TurnstileManager: Cookie already set, skipping verification");
-				setApiTokenSet(true);
-				onTokenGenerated();
-				setTurnstileError(null);
-				console.timeEnd("turnstile");
-			}
 
 			try {
 				const response = await fetch(
@@ -77,6 +78,8 @@ export default function TurnstileManager({
 				console.log("TurnstileManager: Verification error:", error);
 				setTurnstileError("Verification failed. Please try again.");
 				setApiTokenSet(false);
+			} finally {
+				console.timeEnd("turnstile");
 			}
 		},
 		[onTokenGenerated],
