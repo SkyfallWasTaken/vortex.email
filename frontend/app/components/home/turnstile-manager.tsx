@@ -20,15 +20,6 @@ export default function TurnstileManager({
 	}, []);
 
 	useEffect(() => {
-		console.log(
-			"TurnstileManager: siteKey exists:",
-			!!siteKey,
-			"apiToken:",
-			!!apiToken,
-		);
-	}, [apiToken]);
-
-	useEffect(() => {
 		const interval = setInterval(() => {
 			setDots(dots.length < 3 ? `${dots}.` : "");
 		}, 500);
