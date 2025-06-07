@@ -262,12 +262,8 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
 
-    match redis::cmd("EXISTS")
-        .arg(&key)
-        .query_async::<i32>(&mut conn)
-        .await
-    {
-        Ok(exists) => exists > 0,
+    match conn.exists(&key).await {
+        Ok(exists) => exists,
         Err(e) => {
             tracing::error!(email, error = %e, "Failed to check email existence in Redis");
             false
