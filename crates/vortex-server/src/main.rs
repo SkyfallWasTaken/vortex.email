@@ -189,33 +189,43 @@ async fn store_email_in_redis(
     Ok(())
 }
 
+// lua script that ensures the key exists as an empty sorted set and returns all emails
+// what's the point, you ask? this way we can ensure that the key exists and is a sorted set
+// - *in a single roundtrip!*
+const ENSURE_ZSET_SCRIPT: &str = r#"
+    local key = KEYS[1]
+    if redis.call('EXISTS', key) == 0 then
+        redis.call('ZADD', key, 0, 'temp')
+        redis.call('ZREM', key, 'temp')
+    end
+    return redis.call('ZREVRANGE', key, 0, -1)
+"#;
+
 #[tracing::instrument(skip(state))]
 async fn get_emails(
     State(state): State<AppState>,
     Path(email): Path<String>,
 ) -> Result<(StatusCode, Json<Vec<ExtendedEmail>>), StatusCode> {
     if !validate_vortex_email(&email, &state.allowed_domains) {
-        tracing::warn!(email, "Invalid domain requested");
+        tracing::warn!(email, "Invalid domain in GET request");
         return Err(StatusCode::BAD_REQUEST);
     }
 
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
 
-    let email_jsons: Vec<String> = conn.zrevrange(&key, 0, -1).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to retrieve emails from Redis");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let email_jsons: Vec<String> = redis::Script::new(ENSURE_ZSET_SCRIPT)
+        .key(&key)
+        .invoke_async(&mut conn)
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to execute Redis script");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let emails: Vec<ExtendedEmail> = email_jsons
         .into_iter()
-        .filter_map(|json| match serde_json::from_str(&json) {
-            Ok(email) => Some(email),
-            Err(e) => {
-                tracing::error!(error = %e, "Failed to deserialize email from Redis");
-                None
-            }
-        })
+        .filter_map(|json| serde_json::from_str(&json).ok())
         .collect();
 
     Ok((StatusCode::OK, Json(emails)))
