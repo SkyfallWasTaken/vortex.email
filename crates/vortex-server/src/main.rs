@@ -178,13 +178,19 @@ async fn server_main() -> Result<()> {
 
     let http_state = app_state.clone();
     let http_server = tokio::spawn(async move {
-        let cors = CorsLayer::new()
-            .allow_methods([Method::GET, Method::DELETE, Method::POST])
-            .allow_origin(
-                frontend_domain
-                    .parse::<HeaderValue>()
-                    .wrap_err("Invalid FRONTEND_DOMAIN")?,
-            );
+        let http_server = tokio::spawn(async move {
+            let cors = CorsLayer::new()
+                .allow_methods([Method::GET, Method::DELETE, Method::POST])
+                .allow_origin(
+                    frontend_domain
+                        .parse::<HeaderValue>()
+                        .wrap_err("Invalid FRONTEND_DOMAIN")?,
+                )
+                .allow_headers([
+                    http::header::CONTENT_TYPE,
+                    http::header::AUTHORIZATION,
+                ]);
+        });
 
         // Set up rate limiting - 30 requests per minute
         let governor_conf = Arc::new(
