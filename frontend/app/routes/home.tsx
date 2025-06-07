@@ -95,7 +95,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email,
+		enabled: !!email && apiToken !== null,
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state

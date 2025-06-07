@@ -307,22 +307,6 @@ async fn get_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Check API token if Turnstile is enabled
-    if state.turnstile_secret.is_some() {
-        match query.api_token {
-            Some(token) => {
-                if !validate_api_token(&state, &token).await {
-                    tracing::warn!("Invalid or expired API token");
-                    return Err(StatusCode::UNAUTHORIZED);
-                }
-            }
-            None => {
-                tracing::warn!("API token required but not provided");
-                return Err(StatusCode::UNAUTHORIZED);
-            }
-        }
-    }
-
     let key = format!("emails:{}", email);
     let mut conn = state.redis_conn.lock().await.clone();
 
@@ -341,6 +325,29 @@ async fn get_emails(
         .into_iter()
         .filter_map(|json| serde_json::from_str(&json).ok())
         .collect();
+
+    // Check API token if Turnstile is enabled
+    // Why *after* fetching emails? Because we want to ensure the key exists
+    // and we don't want to reject emails just because Turnstile hasn't been verified yet.
+    // (remember that the UI is *very* optimistic and will show that the mailbox is ready even
+    // before Turnstile verification for better UX)
+    // Redis queries themselves are cheap - the whole point of this is to ensure that attackers
+    // don't really have an incentive to wrap this API for spam/custom clients, since they
+    // can't view the emails without a valid API token anyway.
+    if state.turnstile_secret.is_some() {
+        match query.api_token {
+            Some(token) => {
+                if !validate_api_token(&state, &token).await {
+                    tracing::warn!("Invalid or expired API token");
+                    return Err(StatusCode::UNAUTHORIZED);
+                }
+            }
+            None => {
+                tracing::warn!("API token required but not provided");
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+        }
+    }
 
     Ok((StatusCode::OK, Json(emails)))
 }
