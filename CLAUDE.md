@@ -1,0 +1,1 @@
+- **Always run CI commands**, by yourself. e.g. in `.github/workflows/check-rust.yml`. Use them to inform you of your work.
