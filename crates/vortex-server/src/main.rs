@@ -182,7 +182,8 @@ async fn server_main() -> Result<()> {
             .allow_headers([
                 axum::http::header::CONTENT_TYPE,
                 axum::http::header::AUTHORIZATION,
-            ]);
+            ])
+            .allow_credentials(true);
 
         // Set up rate limiting - 30 requests per minute
         let governor_conf = Arc::new(
