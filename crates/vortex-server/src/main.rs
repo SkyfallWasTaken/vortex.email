@@ -525,7 +525,7 @@ async fn verify_turnstile(
 
     // Set cookie with the API token
     let cookie_value = format!(
-        "api_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}",
+        "api_token={}; Path=/; SameSite=Strict; Max-Age={}",
         api_token, ttl_seconds
     );
 

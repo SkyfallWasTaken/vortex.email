@@ -3,13 +3,17 @@ import { useCallback, useEffect, useState } from "react";
 import { LuInbox, LuTriangleAlert } from "react-icons/lu";
 
 interface TurnstileManagerProps {
-	onTokenGenerated: (token: string) => void;
+	onTokenGenerated: () => void;
 }
+
+const getCookieValue = (name: string) => (
+	document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''
+)
 
 export default function TurnstileManager({
 	onTokenGenerated,
 }: TurnstileManagerProps) {
-	const [apiToken, setApiToken] = useState<string | null>(null);
+	const [apiTokenSet, setApiTokenSet] = useState(false);
 	const [turnstileError, setTurnstileError] = useState<string | null>(null);
 	const [dots, setDots] = useState(".");
 
@@ -32,6 +36,16 @@ export default function TurnstileManager({
 				"TurnstileManager: Starting verification with token:",
 				`${token.substring(0, 10)}...`,
 			);
+			// is the cookie already set?
+			const existingToken = getCookieValue("api_token");
+			if (existingToken) {
+				console.log("TurnstileManager: Cookie already set, skipping verification");
+				setApiTokenSet(true);
+				onTokenGenerated();
+				setTurnstileError(null);
+				console.timeEnd("turnstile");
+			}
+
 			try {
 				const response = await fetch(
 					`${import.meta.env.VITE_API_ENDPOINT}/verify-turnstile`,
@@ -48,8 +62,8 @@ export default function TurnstileManager({
 				if (response.ok) {
 					await response.json();
 					console.log("TurnstileManager: Verification successful, cookie set");
-					setApiToken("verified");
-					onTokenGenerated("verified");
+					setApiTokenSet(true);
+					onTokenGenerated();
 					setTurnstileError(null);
 					console.timeEnd("turnstile");
 				} else {
@@ -62,7 +76,7 @@ export default function TurnstileManager({
 			} catch (error) {
 				console.log("TurnstileManager: Verification error:", error);
 				setTurnstileError("Verification failed. Please try again.");
-				setApiToken(null);
+				setApiTokenSet(false);
 			}
 		},
 		[onTokenGenerated],
@@ -79,12 +93,12 @@ export default function TurnstileManager({
 	const handleTurnstileError = useCallback(() => {
 		console.log("TurnstileManager: Turnstile error callback triggered");
 		setTurnstileError("Unable to verify. Please check your connection.");
-		setApiToken(null);
+		setApiTokenSet(false);
 	}, []);
 
 	const handleTurnstileExpire = useCallback(() => {
 		console.log("TurnstileManager: Turnstile expire callback triggered");
-		setApiToken(null);
+		setApiTokenSet(false);
 		setTurnstileError(null);
 	}, []);
 
@@ -110,7 +124,7 @@ export default function TurnstileManager({
 		);
 	}
 
-	if (apiToken) {
+	if (apiTokenSet) {
 		return <NoEmailsFound dots={dots} />;
 	}
 

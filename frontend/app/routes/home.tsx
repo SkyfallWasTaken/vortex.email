@@ -30,7 +30,7 @@ export function meta() {
 
 export default function Home() {
 	const [email, setEmail] = useState<string | null>(null);
-	const [apiToken, setApiToken] = useState<string | null>(null);
+	const [apiTokenSet, setApiTokenSet] = useState(false);
 	const [firstCall, setFirstCall] = useState(true);
 	const queryClient = useQueryClient();
 
@@ -56,19 +56,10 @@ export default function Home() {
 	}, [queryClient]);
 
 	const { error, data } = useQuery<EmailType[]>({
-		queryKey: ["emails", email, apiToken],
+		queryKey: ["emails", email, apiTokenSet],
 		queryFn: () => {
 			const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
 			const url = `${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`;
-
-			console.log(
-				"Fetching emails for:",
-				email,
-				"with siteKey:",
-				!!siteKey,
-				"apiToken:",
-				!!apiToken,
-			);
 
 			return fetch(url, {
 				credentials: "include",
@@ -78,7 +69,7 @@ export default function Home() {
 						setFirstCall(false);
 						if (res.status === 401 || res.status === 403) {
 							console.log("Auth failed, clearing API token");
-							setApiToken(null);
+							setApiTokenSet(false);
 							return [];
 						}
 						throw new Error(`HTTP error! status: ${res.status}`);
@@ -93,7 +84,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email && (firstCall || apiToken !== null),
+		enabled: !!email && (firstCall || apiTokenSet),
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state
@@ -159,7 +150,7 @@ export default function Home() {
 						{email && <ClearAllEmails email={email} />}
 					</div>
 				) : (
-					<TurnstileManager onTokenGenerated={setApiToken} />
+					<TurnstileManager onTokenGenerated={() => setApiTokenSet(true)} />
 				)}
 			</div>
 		</div>
