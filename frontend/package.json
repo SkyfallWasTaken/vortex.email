@@ -12,7 +12,6 @@
 		"format": "biome format --write"
 	},
 	"dependencies": {
-		"@marsidev/react-turnstile": "^1.1.0",
 		"@ngneat/falso": "^7.4.0",
 		"@radix-ui/react-accordion": "^1.2.11",
 		"@react-router/node": "^7.6.2",

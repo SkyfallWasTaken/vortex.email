@@ -10,7 +10,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
 import Email from "~/components/home/email";
-import TurnstileManager from "~/components/home/turnstile-manager";
 import { type Email as EmailType, getRandomEmail } from "~/utils/main";
 
 const title = "Vortex - Free, disposable email addresses";
@@ -30,8 +29,6 @@ export function meta() {
 
 export default function Home() {
 	const [email, setEmail] = useState<string | null>(null);
-	const [apiTokenSet, setApiTokenSet] = useState(false);
-	const [firstCall, setFirstCall] = useState(true);
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
@@ -56,9 +53,8 @@ export default function Home() {
 	}, [queryClient]);
 
 	const { error, data } = useQuery<EmailType[]>({
-		queryKey: ["emails", email, apiTokenSet],
+		queryKey: ["emails", email],
 		queryFn: () => {
-			const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY;
 			const url = `${import.meta.env.VITE_API_ENDPOINT}/emails/${email}`;
 
 			return fetch(url, {
@@ -66,10 +62,8 @@ export default function Home() {
 			})
 				.then((res) => {
 					if (!res.ok) {
-						setFirstCall(false);
 						if (res.status === 401 || res.status === 403) {
-							console.log("Auth failed, clearing API token");
-							setApiTokenSet(false);
+							console.log("Auth failed");
 							return [];
 						}
 						throw new Error(`HTTP error! status: ${res.status}`);
@@ -84,7 +78,7 @@ export default function Home() {
 				);
 		},
 		refetchInterval: 2000,
-		enabled: !!email && (firstCall || apiTokenSet),
+		enabled: !!email,
 	});
 
 	// Render the main layout, conditionally rendering content based on loading state
@@ -150,7 +144,12 @@ export default function Home() {
 						{email && <ClearAllEmails email={email} />}
 					</div>
 				) : (
-					<TurnstileManager onTokenGenerated={() => setApiTokenSet(true)} />
+					<div className="text-center py-8">
+						<p className="text-lg text-text/80">No emails yet!</p>
+						<p className="text-sm text-text/60 mt-2">
+							Your emails will appear here once they arrive.
+						</p>
+					</div>
 				)}
 			</div>
 		</div>
