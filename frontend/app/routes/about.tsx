@@ -34,6 +34,16 @@ export default function About() {
                 spam.
             </p>
 
+            <div className="not-prose my-6 text-center">
+                <Link
+                    to="/"
+                    viewTransition
+                    className="inline-block bg-blue text-mantle font-semibold px-6 py-3 rounded-lg hover:bg-mauve transition-colors duration-200 no-underline"
+                >
+                    Create a disposable email
+                </Link>
+            </div>
+
             <h2 id="your-privacy-is-the-point">Your Privacy is the Point</h2>
             <p>
                 The main reason for a <strong>temp mail</strong> service like this is to
@@ -42,7 +52,9 @@ export default function About() {
                 for things without connecting them all to a single account.
             </p>
             <p>
-                Vortex is simple on purpose. It doesn't track you or show a hundred ads as soon as you scroll down. It just <i>does the thing,</i> because just doing the thing makes tools like these so much nicer to use.
+                Vortex is simple on purpose. It doesn't track you or show a hundred ads
+                as soon as you scroll down. It just <i>does the thing,</i> because just
+                doing the thing makes tools like these so much nicer to use.
             </p>
 
             <h2 id="a-project-by-a-person">A Project by a Person</h2>
@@ -89,6 +101,16 @@ export default function About() {
                 </a>
                 , where a star is always appreciated!
             </p>
+
+            <div className="not-prose my-6 text-center">
+                <Link
+                    to="/"
+                    viewTransition
+                    className="inline-block bg-blue text-mantle font-semibold px-6 py-3 rounded-lg hover:bg-mauve transition-colors duration-200 no-underline"
+                >
+                    Try Vortex now!
+                </Link>
+            </div>
         </div>
     );
 }
