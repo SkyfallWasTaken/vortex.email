@@ -1,5 +1,6 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
+// Also update the sitemap!
 export default [
 	index("routes/home.tsx"),
 	route("/about", "routes/about.tsx"),
