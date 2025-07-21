@@ -1,6 +1,5 @@
 {
-	"name": "MyWebSite",
-	"short_name": "MySite",
+	"name": "Vortex",
 	"icons": [
 		{
 			"src": "/web-app-manifest-192x192.png",
@@ -15,7 +14,7 @@
 			"purpose": "maskable"
 		}
 	],
-	"theme_color": "181825",
-	"background_color": "181825",
+	"theme_color": "#181825",
+	"background_color": "#181825",
 	"display": "standalone"
 }
