@@ -9,10 +9,9 @@ use axum::{
 };
 use color_eyre::{eyre::Context, Result};
 use email_address_parser::EmailAddress;
-use redis::{aio::MultiplexedConnection, AsyncCommands, Client, RedisResult};
+use redis::{aio::ConnectionManager, AsyncCommands, Client, RedisResult};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -29,7 +28,7 @@ struct ExtendedEmail {
 
 #[derive(Clone)]
 struct AppState {
-    redis_conn: Arc<Mutex<MultiplexedConnection>>,
+    redis_manager: ConnectionManager,
     allowed_domains: Arc<Vec<String>>,
 }
 
@@ -45,20 +44,21 @@ async fn server_main() -> Result<()> {
     let redis_client = Client::open(redis_url.clone())
         .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
 
-    let redis_conn = redis_client
-        .get_multiplexed_async_connection()
+    // Use ConnectionManager instead of MultiplexedConnection
+    let redis_manager = ConnectionManager::new(redis_client)
         .await
         .wrap_err("Failed to establish Redis connection")?;
 
-    let mut conn_clone = redis_conn.clone();
+    // Test the connection
+    let mut test_conn = redis_manager.clone();
     let _: String = redis::cmd("PING")
-        .query_async(&mut conn_clone)
+        .query_async(&mut test_conn)
         .await
         .wrap_err("Failed to ping Redis server")?;
     tracing::info!("Connected to Redis server at {}", redis_url);
 
     let app_state = AppState {
-        redis_conn: Arc::new(Mutex::new(redis_conn)),
+        redis_manager,
         allowed_domains,
     };
 
@@ -157,7 +157,8 @@ async fn store_email_in_redis(
     email: &Email,
     timestamp: &str,
 ) -> RedisResult<()> {
-    let mut conn = state.redis_conn.lock().await.clone();
+    // Clone the manager, not the connection - this is cheap and safe
+    let mut conn = state.redis_manager.clone();
 
     let key = format!("emails:{}", recipient);
 
@@ -184,6 +185,7 @@ async fn store_email_in_redis(
         ))
     })?;
 
+    // ConnectionManager handles reconnection automatically
     let _: () = conn.zadd(&key, json, score).await?;
 
     Ok(())
@@ -226,7 +228,7 @@ async fn get_emails(
     }
 
     let key = format!("emails:{}", email);
-    let mut conn = state.redis_conn.lock().await.clone();
+    let mut conn = state.redis_manager.clone();
 
     let sentinel = "__empty__";
     let email_jsons: Vec<String> = redis::Script::new(ENSURE_ZSET_SCRIPT)
@@ -258,7 +260,7 @@ async fn clear_emails(
     }
 
     let key = format!("emails:{}", email);
-    let mut conn = state.redis_conn.lock().await.clone();
+    let mut conn = state.redis_manager.clone();
 
     let _: () = conn.del(&key).await.map_err(|e| {
         tracing::error!(error = %e, "Failed to clear emails from Redis");
@@ -284,9 +286,9 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
         return false;
     }
 
-    // Then get the Redis conn
+    // Then get the Redis connection
     let key = format!("emails:{}", email);
-    let mut conn = state.redis_conn.lock().await.clone();
+    let mut conn = state.redis_manager.clone();
 
     match conn.exists(&key).await {
         Ok(exists) => exists,
