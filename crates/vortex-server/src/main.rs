@@ -335,7 +335,9 @@ async fn create_submission(
     Json(request): Json<CreateSubmissionRequest>,
 ) -> Result<(StatusCode, Json<Submission>), StatusCode> {
     // Validate repo URL format (basic validation)
-    if !request.repo_url.starts_with("https://github.com/") && !request.repo_url.starts_with("https://gitlab.com/") {
+    if !request.repo_url.starts_with("https://github.com/")
+        && !request.repo_url.starts_with("https://gitlab.com/")
+    {
         tracing::warn!(repo_url = request.repo_url, "Invalid repository URL format");
         return Err(StatusCode::BAD_REQUEST);
     }
@@ -358,7 +360,7 @@ async fn create_submission(
 
     let mut conn = state.redis_conn.lock().await.clone();
     let key = format!("submission:{submission_id}");
-    
+
     let json = serde_json::to_string(&submission).map_err(|e| {
         tracing::error!(error = %e, "Failed to serialize submission");
         StatusCode::INTERNAL_SERVER_ERROR
@@ -370,12 +372,20 @@ async fn create_submission(
     })?;
 
     // Add to pending submissions list
-    let _: () = conn.lpush("submissions:pending", &submission_id).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to add submission to pending list");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let _: () = conn
+        .lpush("submissions:pending", &submission_id)
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to add submission to pending list");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
-    tracing::info!(submission_id, repo_url = submission.repo_url, user_id = submission.user_id, "New submission created");
+    tracing::info!(
+        submission_id,
+        repo_url = submission.repo_url,
+        user_id = submission.user_id,
+        "New submission created"
+    );
     Ok((StatusCode::CREATED, Json(submission)))
 }
 
@@ -384,11 +394,14 @@ async fn get_submissions(
     State(state): State<AppState>,
 ) -> Result<(StatusCode, Json<Vec<Submission>>), StatusCode> {
     let mut conn = state.redis_conn.lock().await.clone();
-    
-    let submission_ids: Vec<String> = conn.lrange("submissions:pending", 0, -1).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to get pending submissions from Redis");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+
+    let submission_ids: Vec<String> =
+        conn.lrange("submissions:pending", 0, -1)
+            .await
+            .map_err(|e| {
+                tracing::error!(error = %e, "Failed to get pending submissions from Redis");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
 
     let mut submissions = Vec::new();
     for submission_id in submission_ids {
@@ -410,7 +423,7 @@ async fn approve_submission(
 ) -> Result<(StatusCode, Json<Submission>), StatusCode> {
     let mut conn = state.redis_conn.lock().await.clone();
     let key = format!("submission:{submission_id}");
-    
+
     let json: String = conn.get(&key).await.map_err(|e| {
         tracing::error!(submission_id, error = %e, "Failed to get submission from Redis");
         StatusCode::NOT_FOUND
@@ -437,16 +450,22 @@ async fn approve_submission(
     })?;
 
     // Remove from pending list
-    let _: () = conn.lrem("submissions:pending", 1, &submission_id).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to remove from pending submissions");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let _: () = conn
+        .lrem("submissions:pending", 1, &submission_id)
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to remove from pending submissions");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
-    // Add to approved list  
-    let _: () = conn.lpush("submissions:approved", &submission_id).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to add to approved submissions");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    // Add to approved list
+    let _: () = conn
+        .lpush("submissions:approved", &submission_id)
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to add to approved submissions");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     // Store approved repo URL and user ID for easy retrieval
     let approved_key = format!("approved:{}:{}", submission.user_id, submission.repo_url);
@@ -455,7 +474,12 @@ async fn approve_submission(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    tracing::info!(submission_id, repo_url = submission.repo_url, user_id = submission.user_id, "Submission approved");
+    tracing::info!(
+        submission_id,
+        repo_url = submission.repo_url,
+        user_id = submission.user_id,
+        "Submission approved"
+    );
     Ok((StatusCode::OK, Json(submission)))
 }
 
@@ -464,11 +488,14 @@ async fn get_approved_submissions(
     State(state): State<AppState>,
 ) -> Result<(StatusCode, Json<Vec<Submission>>), StatusCode> {
     let mut conn = state.redis_conn.lock().await.clone();
-    
-    let submission_ids: Vec<String> = conn.lrange("submissions:approved", 0, -1).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to get approved submissions from Redis");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+
+    let submission_ids: Vec<String> =
+        conn.lrange("submissions:approved", 0, -1)
+            .await
+            .map_err(|e| {
+                tracing::error!(error = %e, "Failed to get approved submissions from Redis");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
 
     let mut submissions = Vec::new();
     for submission_id in submission_ids {
@@ -486,16 +513,25 @@ async fn get_approved_submissions(
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let sentry_dsn =
-        env::var("VITE_SENTRY_DSN").wrap_err("failed to read env var VITE_SENTRY_DSN")?;
-    let _sentry_guard = sentry::init((
-        sentry_dsn,
-        sentry::ClientOptions {
-            release: sentry::release_name!(),
-            traces_sample_rate: 0.3,
-            ..Default::default()
-        },
-    ));
+    // Initialize Sentry only if we have a valid DSN
+    let _sentry_guard = if let Ok(sentry_dsn) = env::var("VITE_SENTRY_DSN") {
+        if sentry_dsn.starts_with("https://") && !sentry_dsn.contains("test.invalid") {
+            Some(sentry::init((
+                sentry_dsn,
+                sentry::ClientOptions {
+                    release: sentry::release_name!(),
+                    traces_sample_rate: 0.3,
+                    ..Default::default()
+                },
+            )))
+        } else {
+            tracing::info!("Sentry DSN is invalid or test value, skipping Sentry initialization");
+            None
+        }
+    } else {
+        tracing::info!("VITE_SENTRY_DSN not set, skipping Sentry initialization");
+        None
+    };
 
     tracing_subscriber::registry()
         .with(EnvFilter::from_default_env())
@@ -526,7 +562,7 @@ mod tests {
 
         let json = serde_json::to_string(&submission).unwrap();
         let deserialized: Submission = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(submission.id, deserialized.id);
         assert_eq!(submission.repo_url, deserialized.repo_url);
         assert_eq!(submission.user_id, deserialized.user_id);
@@ -539,21 +575,25 @@ mod tests {
             repo_url: "https://github.com/user/repo".to_string(),
             user_id: "test-user".to_string(),
         };
-        
-        assert!(valid_github_request.repo_url.starts_with("https://github.com/"));
+
+        assert!(valid_github_request
+            .repo_url
+            .starts_with("https://github.com/"));
 
         let valid_gitlab_request = CreateSubmissionRequest {
             repo_url: "https://gitlab.com/user/repo".to_string(),
             user_id: "test-user".to_string(),
         };
-        
-        assert!(valid_gitlab_request.repo_url.starts_with("https://gitlab.com/"));
+
+        assert!(valid_gitlab_request
+            .repo_url
+            .starts_with("https://gitlab.com/"));
 
         let invalid_request = CreateSubmissionRequest {
             repo_url: "https://example.com/repo".to_string(),
             user_id: "test-user".to_string(),
         };
-        
+
         assert!(!invalid_request.repo_url.starts_with("https://github.com/"));
         assert!(!invalid_request.repo_url.starts_with("https://gitlab.com/"));
     }
