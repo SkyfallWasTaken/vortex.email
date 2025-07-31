@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::{
     extract::{Path, State},
     http::{HeaderValue, Method, StatusCode},
-    routing::{delete, get},
+    routing::{delete, get, post},
     Json, Router,
 };
 use color_eyre::{eyre::Context, Result};
@@ -27,6 +27,34 @@ struct ExtendedEmail {
     timestamp: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Submission {
+    id: String,
+    repo_url: String,
+    user_id: String,
+    status: SubmissionStatus,
+    created_at: String,
+    approved_at: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum SubmissionStatus {
+    Pending,
+    Approved,
+    Rejected,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateSubmissionRequest {
+    repo_url: String,
+    user_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ApproveSubmissionRequest {
+    submission_id: String,
+}
+
 #[derive(Clone)]
 struct AppState {
     redis_conn: Arc<Mutex<MultiplexedConnection>>,
@@ -43,7 +71,7 @@ async fn server_main() -> Result<()> {
 
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let redis_client = Client::open(redis_url.clone())
-        .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
+        .wrap_err_with(|| format!("Failed to connect to Redis at {redis_url}"))?;
 
     let redis_conn = redis_client
         .get_multiplexed_async_connection()
@@ -110,7 +138,7 @@ async fn server_main() -> Result<()> {
     let http_state = app_state.clone();
     let http_server = tokio::spawn(async move {
         let cors = CorsLayer::new()
-            .allow_methods([Method::GET, Method::DELETE])
+            .allow_methods([Method::GET, Method::POST, Method::DELETE])
             .allow_origin(
                 frontend_domain
                     .parse::<HeaderValue>()
@@ -124,6 +152,10 @@ async fn server_main() -> Result<()> {
             )
             .route("/emails/{email}", get(get_emails))
             .route("/emails/{email}/clear", delete(clear_emails))
+            .route("/submissions", post(create_submission))
+            .route("/submissions", get(get_submissions))
+            .route("/submissions/{id}/approve", post(approve_submission))
+            .route("/approved-submissions", get(get_approved_submissions))
             .with_state(http_state)
             .layer(cors);
 
@@ -159,7 +191,7 @@ async fn store_email_in_redis(
 ) -> RedisResult<()> {
     let mut conn = state.redis_conn.lock().await.clone();
 
-    let key = format!("emails:{}", recipient);
+    let key = format!("emails:{recipient}");
 
     let timestamp_dt = chrono::DateTime::parse_from_rfc3339(timestamp)
         .map_err(|e| {
@@ -225,7 +257,7 @@ async fn get_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_conn.lock().await.clone();
 
     let sentinel = "__empty__";
@@ -257,7 +289,7 @@ async fn clear_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_conn.lock().await.clone();
 
     let _: () = conn.del(&key).await.map_err(|e| {
@@ -285,7 +317,7 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
     }
 
     // Then get the Redis conn
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_conn.lock().await.clone();
 
     match conn.exists(&key).await {
@@ -295,6 +327,160 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
             false
         }
     }
+}
+
+#[tracing::instrument(skip(state))]
+async fn create_submission(
+    State(state): State<AppState>,
+    Json(request): Json<CreateSubmissionRequest>,
+) -> Result<(StatusCode, Json<Submission>), StatusCode> {
+    // Validate repo URL format (basic validation)
+    if !request.repo_url.starts_with("https://github.com/") && !request.repo_url.starts_with("https://gitlab.com/") {
+        tracing::warn!(repo_url = request.repo_url, "Invalid repository URL format");
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Validate user ID is not empty
+    if request.user_id.trim().is_empty() {
+        tracing::warn!("Empty user ID provided");
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let submission_id = uuid::Uuid::new_v4().to_string();
+    let submission = Submission {
+        id: submission_id.clone(),
+        repo_url: request.repo_url,
+        user_id: request.user_id,
+        status: SubmissionStatus::Pending,
+        created_at: chrono::Utc::now().to_rfc3339(),
+        approved_at: None,
+    };
+
+    let mut conn = state.redis_conn.lock().await.clone();
+    let key = format!("submission:{submission_id}");
+    
+    let json = serde_json::to_string(&submission).map_err(|e| {
+        tracing::error!(error = %e, "Failed to serialize submission");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let _: () = conn.set(&key, json).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to store submission in Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Add to pending submissions list
+    let _: () = conn.lpush("submissions:pending", &submission_id).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to add submission to pending list");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!(submission_id, repo_url = submission.repo_url, user_id = submission.user_id, "New submission created");
+    Ok((StatusCode::CREATED, Json(submission)))
+}
+
+#[tracing::instrument(skip(state))]
+async fn get_submissions(
+    State(state): State<AppState>,
+) -> Result<(StatusCode, Json<Vec<Submission>>), StatusCode> {
+    let mut conn = state.redis_conn.lock().await.clone();
+    
+    let submission_ids: Vec<String> = conn.lrange("submissions:pending", 0, -1).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to get pending submissions from Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut submissions = Vec::new();
+    for submission_id in submission_ids {
+        let key = format!("submission:{submission_id}");
+        if let Ok(json) = conn.get::<String, String>(key).await {
+            if let Ok(submission) = serde_json::from_str::<Submission>(&json) {
+                submissions.push(submission);
+            }
+        }
+    }
+
+    Ok((StatusCode::OK, Json(submissions)))
+}
+
+#[tracing::instrument(skip(state))]
+async fn approve_submission(
+    State(state): State<AppState>,
+    Path(submission_id): Path<String>,
+) -> Result<(StatusCode, Json<Submission>), StatusCode> {
+    let mut conn = state.redis_conn.lock().await.clone();
+    let key = format!("submission:{submission_id}");
+    
+    let json: String = conn.get(&key).await.map_err(|e| {
+        tracing::error!(submission_id, error = %e, "Failed to get submission from Redis");
+        StatusCode::NOT_FOUND
+    })?;
+
+    let mut submission: Submission = serde_json::from_str(&json).map_err(|e| {
+        tracing::error!(submission_id, error = %e, "Failed to deserialize submission");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Update submission status
+    submission.status = SubmissionStatus::Approved;
+    submission.approved_at = Some(chrono::Utc::now().to_rfc3339());
+
+    // Store updated submission
+    let updated_json = serde_json::to_string(&submission).map_err(|e| {
+        tracing::error!(error = %e, "Failed to serialize updated submission");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let _: () = conn.set(&key, &updated_json).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to update submission in Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Remove from pending list
+    let _: () = conn.lrem("submissions:pending", 1, &submission_id).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to remove from pending submissions");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Add to approved list  
+    let _: () = conn.lpush("submissions:approved", &submission_id).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to add to approved submissions");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Store approved repo URL and user ID for easy retrieval
+    let approved_key = format!("approved:{}:{}", submission.user_id, submission.repo_url);
+    let _: () = conn.set(&approved_key, &updated_json).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to store approved submission data");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!(submission_id, repo_url = submission.repo_url, user_id = submission.user_id, "Submission approved");
+    Ok((StatusCode::OK, Json(submission)))
+}
+
+#[tracing::instrument(skip(state))]
+async fn get_approved_submissions(
+    State(state): State<AppState>,
+) -> Result<(StatusCode, Json<Vec<Submission>>), StatusCode> {
+    let mut conn = state.redis_conn.lock().await.clone();
+    
+    let submission_ids: Vec<String> = conn.lrange("submissions:approved", 0, -1).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to get approved submissions from Redis");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut submissions = Vec::new();
+    for submission_id in submission_ids {
+        let key = format!("submission:{submission_id}");
+        if let Ok(json) = conn.get::<String, String>(key).await {
+            if let Ok(submission) = serde_json::from_str::<Submission>(&json) {
+                submissions.push(submission);
+            }
+        }
+    }
+
+    Ok((StatusCode::OK, Json(submissions)))
 }
 
 fn main() -> Result<()> {
@@ -321,4 +507,54 @@ fn main() -> Result<()> {
         .enable_all()
         .build()?
         .block_on(server_main())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_submission_status_serialization() {
+        let submission = Submission {
+            id: "test-id".to_string(),
+            repo_url: "https://github.com/test/repo".to_string(),
+            user_id: "test-user".to_string(),
+            status: SubmissionStatus::Pending,
+            created_at: "2023-01-01T00:00:00Z".to_string(),
+            approved_at: None,
+        };
+
+        let json = serde_json::to_string(&submission).unwrap();
+        let deserialized: Submission = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(submission.id, deserialized.id);
+        assert_eq!(submission.repo_url, deserialized.repo_url);
+        assert_eq!(submission.user_id, deserialized.user_id);
+        assert!(matches!(deserialized.status, SubmissionStatus::Pending));
+    }
+
+    #[test]
+    fn test_create_submission_request_validation() {
+        let valid_github_request = CreateSubmissionRequest {
+            repo_url: "https://github.com/user/repo".to_string(),
+            user_id: "test-user".to_string(),
+        };
+        
+        assert!(valid_github_request.repo_url.starts_with("https://github.com/"));
+
+        let valid_gitlab_request = CreateSubmissionRequest {
+            repo_url: "https://gitlab.com/user/repo".to_string(),
+            user_id: "test-user".to_string(),
+        };
+        
+        assert!(valid_gitlab_request.repo_url.starts_with("https://gitlab.com/"));
+
+        let invalid_request = CreateSubmissionRequest {
+            repo_url: "https://example.com/repo".to_string(),
+            user_id: "test-user".to_string(),
+        };
+        
+        assert!(!invalid_request.repo_url.starts_with("https://github.com/"));
+        assert!(!invalid_request.repo_url.starts_with("https://gitlab.com/"));
+    }
 }

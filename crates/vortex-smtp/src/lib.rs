@@ -42,6 +42,7 @@ pub struct State {
     data: Vec<u8>, // We can't use a &[u8], as that could cause a stack overflow
 }
 
+#[allow(clippy::cognitive_complexity)]
 async fn process<T, F>(mut socket: TcpStream, is_email_valid: T) -> Result<State, Error>
 where
     T: Fn(&str) -> F + Send,

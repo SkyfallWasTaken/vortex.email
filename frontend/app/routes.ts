@@ -6,6 +6,7 @@ export default [
 	route("/about", "routes/about.tsx"),
 	route("/credits", "routes/credits.tsx"),
 	route("/support-the-project", "routes/support-the-project.tsx"),
+	route("/submissions", "routes/submissions.tsx"),
 
 	route("/legal", "routes/legal.tsx"),
 	route("/legal/privacy", "routes/privacy.tsx"),
