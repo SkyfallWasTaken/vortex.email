@@ -35,12 +35,12 @@ export default function Home() {
 	useEffect(() => {
 		if (typeof window !== "undefined") {
 			// Older versions of Vortex JSON.stringify'd the email, so we need to remove the quotes
-			const storedEmail = localStorage.getItem("email")?.replaceAll('"', "");
+			const storedEmail = localStorage.getItem("email-v2")?.replaceAll('"', "");
 			if (storedEmail) {
 				setEmail(storedEmail);
 			} else {
 				const newEmail = getRandomEmail();
-				localStorage.setItem("email", newEmail);
+				localStorage.setItem("email-v2", newEmail);
 				setEmail(newEmail);
 			}
 		}
@@ -48,7 +48,7 @@ export default function Home() {
 
 	const updateEmail = useCallback(() => {
 		const newEmail = getRandomEmail();
-		localStorage.setItem("email", newEmail);
+		localStorage.setItem("email-v2", newEmail);
 		setEmail(newEmail);
 		queryClient.setQueryData(["emails", newEmail], []);
 	}, [queryClient]);
