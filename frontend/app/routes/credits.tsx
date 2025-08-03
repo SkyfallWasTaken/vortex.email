@@ -28,8 +28,8 @@ const CREDITS = [
 	},
 	{
 		name: "DigitalPlat",
-		url: "https://digitalplat.org"
-	}
+		url: "https://digitalplat.org",
+	},
 ];
 
 export default function Credits() {
