@@ -26,11 +26,6 @@ jobs:
         with:
           tool: cargo-nextest,cargo-machete
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y perl
-
       - name: Run cargo build
         run: cargo build
 
