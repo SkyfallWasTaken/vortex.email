@@ -44,12 +44,11 @@ async fn server_main() -> Result<()> {
     let redis_client = Client::open(redis_url.clone())
         .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
 
-    // Use ConnectionManager instead of MultiplexedConnection
     let redis_manager = ConnectionManager::new(redis_client)
         .await
         .wrap_err("Failed to establish Redis connection")?;
 
-    // Test the connection
+    utest the connection!
     let mut test_conn = redis_manager.clone();
     let _: String = redis::cmd("PING")
         .query_async(&mut test_conn)
@@ -157,7 +156,6 @@ async fn store_email_in_redis(
     email: &Email,
     timestamp: &str,
 ) -> RedisResult<()> {
-    // Clone the manager, not the connection - this is cheap and safe
     let mut conn = state.redis_manager.clone();
 
     let key = format!("emails:{}", recipient);
@@ -185,7 +183,7 @@ async fn store_email_in_redis(
         ))
     })?;
 
-    // ConnectionManager handles reconnection automatically
+    // ConnectionManager handles reconnection automatically :D
     let _: () = conn.zadd(&key, json, score).await?;
 
     Ok(())
