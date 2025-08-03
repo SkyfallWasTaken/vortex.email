@@ -30,6 +30,10 @@ const CREDITS = [
 		name: "DigitalPlat",
 		url: "https://digitalplat.org",
 	},
+	{
+		name: "Navdeep",
+		url: "https://navdeepsingh.tech",
+	},
 ];
 
 export default function Credits() {
