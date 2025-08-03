@@ -9,6 +9,25 @@ export function meta() {
 	];
 }
 
+const CREDITS = [
+	{
+		name: "Ella",
+		url: "https://ella.ad/",
+	},
+	{
+		name: "Hack Club",
+		url: "https://hackclub.com/",
+	},
+	{
+		name: "Niko",
+		url: "https://niko.launders.money",
+	},
+	{
+		name: "Jeremy",
+		url: "https://jer.app",
+	},
+];
+
 export default function Credits() {
 	return (
 		<div className="flex flex-col md:p-6 mx-6 my-6 prose">
@@ -18,104 +37,18 @@ export default function Credits() {
 			</p>
 
 			<ul>
-				<li>
-					<a
-						href="https://pixelverse.tech/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Hayden Kong/Pixelverse
-					</a>{" "}
-					for the{" "}
-					<b>
-						shadow.pixelverse.tech, assembly.pixelverse.tech, and
-						corporate.pixelverse.tech
-					</b>{" "}
-					subdomains
-				</li>
-				<li>
-					<a
-						href="https://hackclub.com/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Hack Club
-					</a>{" "}
-					for the <b>shadow.dino.icu, erdtree.dino.icu, and vortex.dino.icu</b>{" "}
-					subdomains
-				</li>
-				<li>
-					<a
-						href="https://github.com/mattsoh"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Matthew Soh
-					</a>{" "}
-					for the <b>vortex.mattsoh.dev</b> subdomain
-				</li>
-				<li>
-					<a
-						href="https://ssmidge.xyz/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Adrian T
-					</a>{" "}
-					for the <b>lunarhoax.com</b> domain{" "}
-					<i>(side note: the domain isn't about the moon landing 😅)</i>
-				</li>
-				<li>
-					<a
-						href="https://github.com/jeremy46231"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Jeremy Woolley
-					</a>{" "}
-					for the <b>comet.jer.app and cosmos.jer.app</b> subdomains
-				</li>
-				<li>
-					<a
-						href="https://github.com/matytyma"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						matytyma
-					</a>{" "}
-					for the <b>vortex.matytyma.dev</b> subdomain
-				</li>
-				<li>
-					<a
-						href="https://bbsshack.club/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						The BBSS Hack Club
-					</a>{" "}
-					for the <b>shuttle.bbsshack.club</b> subdomain
-				</li>
-				<li>
-					<a
-						href="https://userexe.me/"
-						target="_blank"
-						className="underline"
-						rel="noreferrer"
-					>
-						Dominic
-					</a>{" "}
-					for the <b>gambling.baby</b> domain
-				</li>
-				<li>
-					Lucas for the <b>whatisham.eu.org</b> subdomain
-				</li>
+				{CREDITS.map((credit) => (
+					<li key={credit.name}>
+						<a
+							href={credit.url}
+							target="_blank"
+							className="underline"
+							rel="noreferrer"
+						>
+							{credit.name}
+						</a>
+					</li>
+				))}
 			</ul>
 		</div>
 	);
