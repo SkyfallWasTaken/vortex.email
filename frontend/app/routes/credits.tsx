@@ -16,7 +16,7 @@ const CREDITS = [
 	},
 	{
 		name: "Hack Club",
-		url: "https://hackclub.com/",
+		url: "https://hackclub.com",
 	},
 	{
 		name: "Niko",
@@ -26,6 +26,10 @@ const CREDITS = [
 		name: "Jeremy",
 		url: "https://jer.app",
 	},
+	{
+		name: "DigitalPlat",
+		url: "https://digitalplat.org"
+	}
 ];
 
 export default function Credits() {
