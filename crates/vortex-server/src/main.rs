@@ -20,6 +20,14 @@ use vortex_smtp::{event::Event, Email};
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:2525";
 
+const BLOCKED_USERNAMES: &[&str] = &[
+    "postmaster", "abuse", "admin", "administrator", "webmaster", "info", "support",
+    "security", "contact", "help", "no-reply", "noreply", "root", "test", "testing",
+    "hi", "hello", "welcome", "newsletter", "updates", "alerts", "notifications",
+    "hostmaster", "mail", "sales", "marketing", "billing", "legal", "privacy",
+    "press", "media", "jobs", "careers", "hr", "human_resources", "team", "security"
+];
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct ExtendedEmail {
     email: Email,
@@ -273,6 +281,12 @@ fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
+    
+    if BLOCKED_USERNAMES.contains(&parsed.get_local_part().to_lowercase().as_str()) {
+        tracing::warn!(email, "Blocked username attempted");
+        return false;
+    }
+
     allowed_domains
         .iter()
         .any(|domain| parsed.domain() == *domain)
