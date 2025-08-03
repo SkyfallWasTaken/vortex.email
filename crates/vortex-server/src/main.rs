@@ -42,7 +42,7 @@ async fn server_main() -> Result<()> {
 
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let redis_client = Client::open(redis_url.clone())
-        .wrap_err_with(|| format!("Failed to connect to Redis at {}", redis_url))?;
+        .wrap_err_with(|| format!("Failed to connect to Redis at {redis_url}"))?;
 
     let redis_manager = ConnectionManager::new(redis_client)
         .await
@@ -158,7 +158,7 @@ async fn store_email_in_redis(
 ) -> RedisResult<()> {
     let mut conn = state.redis_manager.clone();
 
-    let key = format!("emails:{}", recipient);
+    let key = format!("emails:{recipient}");
 
     let timestamp_dt = chrono::DateTime::parse_from_rfc3339(timestamp)
         .map_err(|e| {
@@ -225,7 +225,7 @@ async fn get_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_manager.clone();
 
     let sentinel = "__empty__";
@@ -257,7 +257,7 @@ async fn clear_emails(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_manager.clone();
 
     let _: () = conn.del(&key).await.map_err(|e| {
@@ -285,7 +285,7 @@ async fn validate_vortex_email_with_redis(email: &str, state: &AppState) -> bool
     }
 
     // Then get the Redis connection
-    let key = format!("emails:{}", email);
+    let key = format!("emails:{email}");
     let mut conn = state.redis_manager.clone();
 
     match conn.exists(&key).await {
