@@ -48,7 +48,7 @@ async fn server_main() -> Result<()> {
         .await
         .wrap_err("Failed to establish Redis connection")?;
 
-    utest the connection!
+    // test the connection!
     let mut test_conn = redis_manager.clone();
     let _: String = redis::cmd("PING")
         .query_async(&mut test_conn)
