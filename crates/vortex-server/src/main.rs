@@ -20,6 +20,7 @@ use vortex_smtp::{event::Event, Email};
 const HTTP_ADDR: &str = "0.0.0.0:3000";
 const SMTP_ADDR: &str = "0.0.0.0:2525";
 
+#[rustfmt::skip]
 const BLOCKED_USERNAMES: &[&str] = &[
     "postmaster", "abuse", "admin", "administrator", "webmaster", "info", "support",
     "security", "contact", "help", "no-reply", "noreply", "root", "test", "testing",
@@ -281,7 +282,7 @@ fn validate_vortex_email(email: &str, allowed_domains: &[String]) -> bool {
     let Some(parsed) = EmailAddress::parse(email, None) else {
         return false;
     };
-    
+
     if BLOCKED_USERNAMES.contains(&parsed.get_local_part().to_lowercase().as_str()) {
         tracing::warn!(email, "Blocked username attempted");
         return false;
