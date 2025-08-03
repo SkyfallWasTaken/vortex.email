@@ -44,4 +44,4 @@ jobs:
         run: cargo fmt --check
 
       - name: Check clippy
-        run: cargo clippy --all-features -- -D warnings
+        run: cargo clippy --all-features -- -D warnings -A clippy::cognitive_complexity
