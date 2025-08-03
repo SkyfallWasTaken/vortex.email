@@ -34,6 +34,14 @@ const CREDITS = [
 		name: "Navdeep",
 		url: "https://navdeepsingh.tech",
 	},
+	{
+		name: "Arthur",
+		url: "http://github.com/aversefun",
+	},
+	{
+		name: "Advait",
+		url: "https://advaitconty.com",
+	},
 ];
 
 export default function Credits() {
