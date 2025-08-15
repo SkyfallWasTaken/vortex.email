@@ -42,6 +42,10 @@ const CREDITS = [
 		name: "Advait",
 		url: "https://advaitconty.com",
 	},
+	{
+		name: "Parneel",
+		url: "https://pbhak.dev",
+	},
 ];
 
 export default function Credits() {
