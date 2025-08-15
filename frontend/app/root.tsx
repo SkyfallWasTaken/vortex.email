@@ -14,6 +14,8 @@ import stylesheet from "~/app.css?url";
 import Footer from "~/components/layout/footer";
 import Header from "~/components/layout/header";
 
+import "@fontsource-variable/inter";
+
 export const links: Route.LinksFunction = () => [
 	{ rel: "stylesheet", href: stylesheet },
 ];
